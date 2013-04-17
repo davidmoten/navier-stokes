@@ -548,6 +548,24 @@ trait Solver {
     .map(v => v.toString + "\n").toString
 }
 
+/////////////////////////////////////////////////////////////////////
+// Sign                      
+/////////////////////////////////////////////////////////////////////
+
+trait Sign
+trait NonZeroSign
+case class PositiveSign() extends Sign with NonZeroSign
+case class NegativeSign() extends Sign with NonZeroSign
+case class ZeroSign() extends Sign
+
+object Sign {
+  val Positive = PositiveSign()
+  val Negative = NegativeSign()
+  val Zero = ZeroSign();
+  val nonZeroSigns = List(Positive,Negative)
+}
+
+import Sign._
 
 /////////////////////////////////////////////////////////////////////
 // Grid                      
@@ -557,6 +575,34 @@ trait Solver {
  * Utility methods for a Grid of 3D points.
  */
 object Grid {
+
+  type DirectionalNeighbours2 = Map[(Direction,Sign,HasPosition),HasPosition];
+
+  def getDirectionalNeighbours2( positions:Set[HasPosition]): DirectionalNeighbours2 = {
+
+      // get a map of (vector, direction) 
+      //                -> List of positions sorted by direction ordinate
+      // which is for each direction say x a map of ((0,y,z), X) -> ((0.8,y,z),(1.2,y,z))
+      // so that for a given point on a regular grid we can decide what are the 
+      // neighbouring points
+      val map:Map[(Vector,Direction),List[HasPosition]] = 
+          positions.toList.map(
+            p => 
+              directions.map( 
+                  d => ((p.position.modify(d, 0),d),p)
+              )
+          ).flatten
+           .groupBy(_._1)
+           .toList
+           .map(x => (x._1,
+                      x._2.map(y=>y._2).sortBy(y=>y.position.get(x._1._2))))
+           .toMap
+      val list = 
+          for (d<-directions;sign<-nonZeroSigns;p<-positions) 
+              // TODO use map above to return closest position for the direction and sign
+              yield{ ((d,sign,p),p) }
+      list.toMap
+  }
 
   type DirectionalNeighbours = Map[(Direction, HasPosition), (HasPosition, HasPosition)]
 
@@ -607,17 +653,6 @@ case class Grid(positions: Set[HasPosition]) {
 /////////////////////////////////////////////////////////////////////
 // RegularGridSolver                                                                        
 /////////////////////////////////////////////////////////////////////
-
-trait Sign
-case class PositiveSign() extends Sign
-case class NegativeSign() extends Sign
-case class ZeroSign() extends Sign
-
-object Sign {
-  val Positive = PositiveSign()
-  val Negative = NegativeSign()
-  val Zero = ZeroSign();
-}
 
 object RegularGridSolver {
   import scala.math.signum

@@ -7,6 +7,7 @@ import scala.math._
 import scala.util.Random._
 import Logger._
 
+
 @Test
 class VectorTest {
 
@@ -60,6 +61,7 @@ class VectorTest {
     assertEquals(Vector(1, 2, 4), v1.modify(Z, 4))
   }
 }
+
 
 @Test
 class NewtonsMethodTest {
@@ -291,3 +293,5 @@ class RegularGridSolverTest {
   }
 
 }
+
+
