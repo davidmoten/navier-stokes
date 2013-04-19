@@ -576,7 +576,7 @@ import Sign._
  */
 object Grid {
 
-  type DirectionalNeighbours2 = Map[(Direction,Sign,HasPosition),HasPosition];
+  type DirectionalNeighbours2 = Map[(Direction,NonZeroSign,HasPosition),HasPosition];
 
   def getDirectionalNeighbours2( positions:Set[HasPosition]): DirectionalNeighbours2 = {
 
@@ -600,7 +600,10 @@ object Grid {
       val list = 
           for (d<-directions;sign<-nonZeroSigns;p<-positions) 
               // TODO use map above to return closest position for the direction and sign
-              yield{ ((d,sign,p),p) }
+              yield{ 
+              val pset = map.getOrElse((p.position.modify(d,0),d),unexpected)
+              ((d,sign,p),p)
+               }
       list.toMap
   }
 
