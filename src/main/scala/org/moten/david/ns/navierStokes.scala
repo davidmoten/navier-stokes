@@ -576,9 +576,9 @@ import Sign._
  */
 object Grid {
 
-  type DirectionalNeighbours2 = Map[(Direction,NonZeroSign,HasPosition),HasPosition];
+  type DirectionalNeighbours = Map[(Direction,NonZeroSign,HasPosition),HasPosition];
 
-  def getDirectionalNeighbours2( positions:Set[HasPosition]): DirectionalNeighbours2 = {
+  def getDirectionalNeighbours( positions:Set[HasPosition]): DirectionalNeighbours = {
 
       // get a map of (vector, direction) 
       //                -> List of positions sorted by direction ordinate
@@ -622,31 +622,6 @@ object Grid {
       list.toMap
   }
 
-  type DirectionalNeighbours = Map[(Direction, HasPosition), (HasPosition, HasPosition)]
-
-  /**
-   * Returns the neighbours of an ordinate in a given direction.
-   * @param vectors
-   * @return
-   */
-  def getDirectionalNeighbours(
-    positions: Set[HasPosition]): DirectionalNeighbours = {
-    info("getting directional neighbours")
-    //produce a map of Direction to a map of ordinate values with their 
-    //negative and positive direction neighbour ordinate values. This 
-    //map will return None for all elements on the boundary.
-    directions.map(d => {
-      val b = positions.toSet.toList.sorted(HasPositionOrdering)
-      if (b.size < 3)
-        List()
-      else
-        b.sliding(3).toList.map(
-          x => ((d, x(1)), (x(0), x(2))))
-          .++(List(((d, b(0)), (Empty(b(0).position), b(1)))))
-          .++(List(((d, b(b.size - 1)), (b(b.size - 2), Empty(b(b.size - 1).position)))))
-    }).flatten.toMap
-  }
-
   /**
    * Returns the boundary ordinates of the vectors set which is assumed
    *  to be a 3D grid.
@@ -665,7 +640,7 @@ object Grid {
  * Regular or irregular grid of 3D points (vectors).
  */
 case class Grid(positions: Set[HasPosition]) {
-  val neighbours = Grid.getDirectionalNeighbours2(positions)
+  val neighbours = Grid.getDirectionalNeighbours(positions)
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -697,8 +672,15 @@ object RegularGridSolver {
 
   private def getNeighbours(grid:Grid, position:HasPosition,
     sign:Sign): Positions = {
-    //TODO
-    null
+    sign match {
+      case s:NonZeroSign => 
+          (
+            grid.neighbours.getOrElse((X,s,position),unexpected),
+            grid.neighbours.getOrElse((Y,s,position),unexpected),
+            grid.neighbours.getOrElse((Z,s,position),unexpected)
+          )
+      case _ => unexpected
+    }
   }
 
   def overrideValue(t:HasPosition, overrideValue:Value):HasPosition = {
