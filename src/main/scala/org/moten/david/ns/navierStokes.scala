@@ -598,7 +598,7 @@ object Grid {
                       x._2.map(y=>y._2).sortBy(y=>y.position.get(x._1._2))))
            .toMap
       val list = 
-          for (d<-directions;sign<-nonZeroSigns;p<-positions) 
+          for (d<-directions; sign<-nonZeroSigns; p<-positions) 
               // use map above to return closest position for the direction and sign
               yield{ 
                   val pset = map.getOrElse((p.position.modify(d,0),d),unexpected)
@@ -665,7 +665,7 @@ object Grid {
  * Regular or irregular grid of 3D points (vectors).
  */
 case class Grid(positions: Set[HasPosition]) {
-  val neighbours = Grid.getDirectionalNeighbours(positions)
+  val neighbours = Grid.getDirectionalNeighbours2(positions)
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -686,8 +686,20 @@ object RegularGridSolver {
   type Positions = Tuple3[HasPosition,HasPosition,HasPosition]
 
   def getNeighbours(grid: Grid, position: HasPosition,
-    d: Direction, relativeTo: Option[Vector]): Positions =
-    todo
+    d: Direction, relativeTo: Option[Vector]): Positions = {
+	if (relativeTo.isDefined) {
+      val sign = getSign(position,relativeTo,d)
+      getNeighbours(grid,position,sign)
+    } else {
+      getNeighbours(grid,position,Positive)
+    }
+  }
+
+  private def getNeighbours(grid:Grid, position:HasPosition,
+    sign:Sign): Positions = {
+    //TODO
+    null
+  }
 
   def overrideValue(t:HasPosition, overrideValue:Value):HasPosition = {
     if (t.position.equals(overrideValue.position))
