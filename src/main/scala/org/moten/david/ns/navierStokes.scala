@@ -601,25 +601,30 @@ object Grid {
           for (d<-directions; sign<-nonZeroSigns; p<-positions) 
               // use map above to return closest position for the direction and sign
               yield{ 
-                  val pset = map.getOrElse((p.position.modify(d,0),d),unexpected)
-                  if (pset.size == 1) 
-                      ((d,sign,p), Empty(p.position))
-                  else {
-                      val index = pset.indexOf(p);
-				      if (d == PositiveSign) {
-                          if (index == pset.size-1)
-                              ((d,sign,p), Empty(p.position))
-                          else 
-                              ((d,sign,p), pset(index+1))
-                      } else {
-                          if (index == 0)
-                              ((d,sign,p), Empty(p.position))
-                          else 
-                              ((d,sign,p), pset(index-1))
-                      }     
-				  } 
+                  closestNeighbour(map,d,sign,p)
                }
       list.toMap
+  }
+
+  private def closestNeighbour(map: Map[(Vector,Direction),List[HasPosition]],
+     d:Direction, sign:NonZeroSign, p:HasPosition) = {
+      val pset = map.getOrElse((p.position.modify(d,0),d),unexpected)
+      if (pset.size == 1) 
+          ((d,sign,p), Empty(p.position))
+      else {
+          val index = pset.indexOf(p);
+	      if (d == PositiveSign) {
+              if (index == pset.size-1)
+                  ((d,sign,p), Empty(p.position))
+              else 
+                  ((d,sign,p), pset(index+1))
+          } else {
+              if (index == 0)
+                  ((d,sign,p), Empty(p.position))
+              else 
+                  ((d,sign,p), pset(index-1))
+          }     
+	  } 
   }
 
 }
@@ -648,15 +653,16 @@ object RegularGridSolver {
   type V = HasValue //either Point or Boundary
   type Positions = Tuple3[HasPosition,HasPosition,HasPosition]
 
+  /**
+   * Returns neighbours in each direction relative to relativeTo.
+   */
   def getNeighbours(grid: Grid, position: HasPosition,
-    d: Direction, relativeTo: Option[Vector]): Positions = {
+    d: Direction, relativeTo: Option[Vector]): Positions = 
 	if (relativeTo.isDefined) {
       val sign = getSign(position,relativeTo,d)
       getNeighbours(grid,position,sign)
-    } else {
+    } else 
       getNeighbours(grid,position,Positive)
-    }
-  }
 
   private def getNeighbours(grid:Grid, position:HasPosition,
     sign:Sign): Positions = 
