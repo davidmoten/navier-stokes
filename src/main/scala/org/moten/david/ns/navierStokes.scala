@@ -622,18 +622,6 @@ object Grid {
       list.toMap
   }
 
-  /**
-   * Returns the boundary ordinates of the vectors set which is assumed
-   *  to be a 3D grid.
-   * @param vectors
-   * @return
-   */
-//TODO is this used?
-  def getExtremes(vectors: Set[Vector]): Direction => (Double, Double) =
-    directions.map(d => {
-      val list = vectors.map(_.get(d)).toList
-      (d, (list.min, list.max))
-    }).toMap.getOrElse(_, unexpected)
 }
 
 /**
