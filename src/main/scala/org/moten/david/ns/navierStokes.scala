@@ -585,13 +585,13 @@ object Grid {
       // which is for each direction say x a map of ((0,y,z), X) -> ((0.8,y,z),(1.2,y,z))
       // so that for a given point on a regular grid we can decide what are the 
       // neighbouring points
-      val map:Map[(Vector,Direction),List[HasPosition]] = 
+      val map: Map[(Vector,Direction),List[HasPosition]] = 
           positions.toList.map(
             p => 
               directions.map( 
                   d => ((p.position.modify(d, 0),d),p)
               )
-          ).flatten
+          ).flatten 
            .groupBy(_._1)
            .toList
            .map(x => (x._1,
@@ -599,10 +599,25 @@ object Grid {
            .toMap
       val list = 
           for (d<-directions;sign<-nonZeroSigns;p<-positions) 
-              // TODO use map above to return closest position for the direction and sign
+              // use map above to return closest position for the direction and sign
               yield{ 
-              val pset = map.getOrElse((p.position.modify(d,0),d),unexpected)
-              ((d,sign,p),p)
+                  val pset = map.getOrElse((p.position.modify(d,0),d),unexpected)
+                  if (pset.size == 1) 
+                      ((d,sign,p), Empty(p.position))
+                  else {
+                      val index = pset.indexOf(p);
+				      if (d == PositiveSign) {
+                          if (index == pset.size-1)
+                              ((d,sign,p), Empty(p.position))
+                          else 
+                              ((d,sign,p), pset(index+1))
+                      } else {
+                          if (index == 0)
+                              ((d,sign,p), Empty(p.position))
+                          else 
+                              ((d,sign,p), pset(index-1))
+                      }     
+				  } 
                }
       list.toMap
   }
