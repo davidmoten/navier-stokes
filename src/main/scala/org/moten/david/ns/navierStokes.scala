@@ -659,7 +659,7 @@ object RegularGridSolver {
   }
 
   private def getNeighbours(grid:Grid, position:HasPosition,
-    sign:Sign): Positions = {
+    sign:Sign): Positions = 
     sign match {
       case s:NonZeroSign => 
           (
@@ -669,7 +669,7 @@ object RegularGridSolver {
           )
       case _ => unexpected
     }
-  }
+  
 
   def overrideValue(t:HasPosition, overrideValue:Value):HasPosition = {
     if (t.position.equals(overrideValue.position))
