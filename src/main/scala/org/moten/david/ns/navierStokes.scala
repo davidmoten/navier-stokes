@@ -221,7 +221,6 @@ case class Value(position: Vector,
 object Value {
   implicit def toValue(v: HasValue) = v.value
   implicit def toPosition(p: HasPosition) = p.position
-  def isObstacle(v: Value) = v.isInstanceOf[Obstacle]
 }
 
 /////////////////////////////////////////////////////////////////////
