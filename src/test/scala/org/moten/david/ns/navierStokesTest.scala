@@ -137,9 +137,15 @@ class GridDataTest {
   import Vector._
   import RegularGrid._
 
+  case class Pos(x: Double, y: Double, z: Double) extends HasPosition {
+    val position = Vector(x,y,z)
+  }
+
   @Test
   def testGetDirectionalNeighbours() {
-    //TODO
+	val positions=Set[HasPosition](Pos(1,1,1),Pos(2,1,1),Pos(3,1,1))
+
+	println(RegularGrid(positions).neighbours)
   }
 
   @Test
