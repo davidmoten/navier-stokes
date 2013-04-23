@@ -49,7 +49,7 @@ class VectorTest {
   @Test
   def testVectorSum() {
     val v1 = new Vector(1, 2, 3.5)
-    assertEquals(1 + 2 + 3.5, v1 sum, Precision)
+    assertEquals(1 + 2 + 3.5, v1.sum, Precision)
   }
 
   @Test

@@ -219,6 +219,8 @@ case class Value(position: Vector,
  * Companion object.
  */
 object Value {
+  import scala.language.implicitConversions
+  
   implicit def toValue(v: HasValue) = v.value
   implicit def toPosition(p: HasPosition) = p.position
 }
