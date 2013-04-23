@@ -711,13 +711,14 @@ object RegularGridSolver {
 
     val t = transform((v1, v2, v3, sign))
 
-    t match {
-      case v: (V, V, V) =>
-        getGradient(f, v._1, v._2, v._3, direction, derivativeType)
-      case v: (V, V, E) =>
-        getGradient(f, v._1, v._2, direction, derivativeType)
-      case _ => unexpected
-    }
+    //cannot use match statement because of type erasure
+    if (is[V,V,V](t)) 
+      getGradient(f, toV(t._1), toV(t._2), toV(t._3), direction, derivativeType)
+    else 
+    if (is[V,V,E](t)) 
+      getGradient(f, toV(t._1), toV(t._2), direction, derivativeType)
+    else
+      unexpected
   }
 
   /**
@@ -727,23 +728,69 @@ object RegularGridSolver {
    * @return
    */
   private def transform(
-    t: (HasPosition, HasPosition, HasPosition, Sign)): (HasPosition, HasPosition, HasPosition) = {
+    v: (HasPosition, HasPosition, HasPosition, Sign)): (HasPosition, HasPosition, HasPosition) = {
 
     //sign = ZeroSign  if no relativeTo and v2 is Point
     //sign= PositiveSign if relativeTo is on the v3 side 
     //sign = NegativeSign if relativeTo is on the v1 side
 
-    t match {
-      case v: (V, V, V, Sign) => (v._1, v._2, v._3)
-      case v: (V, V, E, Sign) => (v._1, v._2, v._3)
-      case v: (E, V, V, Sign) => (v._2, v._3, v._1)
-      case v: (A, V, O, Sign) => transform((v._1, v._2, obstacleToPoint(v._3, v._2), v._4))
-      case v: (O, V, A, Sign) => transform((obstacleToPoint(v._1, v._2), v._2, v._3, v._4))
-      case v: (A, O, V, PositiveSign) => (obstacleToPoint(v._2, v._3), v._3, new Empty)
-      case v: (V, O, A, NegativeSign) => (v._1, obstacleToPoint(v._2, v._1), new Empty)
-      case _ => unexpected
-    }
+    //would like to use a match statement like
+    //t match {
+    //  case v: (V, V, V, Sign) => (v._1, v._2, v._3)
+    // ...
+    // but type erasure means we cannot
+    
+    if (is[V,V,V](v))    (v._1, v._2, v._3)
+    else 
+    if (is[V,V,E](v))    (v._1, v._2, v._3)
+    else 
+    if (is[E,V,V](v))    (v._2, v._3, v._1)
+    else
+    if (is[A,V,O](v))    transform((v._1, v._2, obstacleToPoint(toO(v._3), toV(v._2)), v._4))
+    else
+    if (is[O,V,A](v))    transform((obstacleToPoint(toO(v._1), toV(v._2)), v._2, v._3, v._4))
+    else 
+    if (is[A,O,V,PositiveSign](v))
+                         (obstacleToPoint(toO(v._2), toV(v._3)), v._3, new Empty)
+    else 
+    if (is[V,O,A,NegativeSign](v))
+                         (v._1, obstacleToPoint(toO(v._2), toV(v._1)), new Empty)
+    else unexpected
+   
   }
+  
+  private def toO(p:HasPosition) = p.asInstanceOf[O]
+  
+  private def toV(p:HasPosition) = p.asInstanceOf[V]
+
+  private def is[T1<:HasPosition,
+                 T2<:HasPosition,
+                 T3<:HasPosition] 
+    (v:(HasPosition, HasPosition, HasPosition, Sign))
+        (implicit man1:Manifest[T1],man2:Manifest[T2],man3:Manifest[T3]) = 
+      man1.runtimeClass.isAssignableFrom(v._1.getClass) && 
+      man2.runtimeClass.isAssignableFrom(v._2.getClass) && 
+      man3.runtimeClass.isAssignableFrom(v._3.getClass)
+      
+  private def is[T1<:HasPosition,
+                 T2<:HasPosition,
+                 T3<:HasPosition] 
+    (v:(HasPosition, HasPosition, HasPosition))
+        (implicit man1:Manifest[T1],man2:Manifest[T2],man3:Manifest[T3]) = 
+      man1.runtimeClass.isAssignableFrom(v._1.getClass) && 
+      man2.runtimeClass.isAssignableFrom(v._2.getClass) && 
+      man3.runtimeClass.isAssignableFrom(v._3.getClass)
+      
+  private def is[T1<:HasPosition,
+                 T2<:HasPosition,
+                 T3<:HasPosition,
+                 S<:Sign] 
+    (v:(HasPosition, HasPosition, HasPosition, Sign))
+        (implicit man1:Manifest[T1],man2:Manifest[T2],man3:Manifest[T3],man4:Manifest[S]) = 
+      man1.runtimeClass.isAssignableFrom(v._1.getClass) && 
+      man2.runtimeClass.isAssignableFrom(v._2.getClass) && 
+      man3.runtimeClass.isAssignableFrom(v._3.getClass) &&
+      man4.runtimeClass.isAssignableFrom(v._4.getClass)
 
   private def obstacleToPoint(o: Obstacle, point: HasValue): Point = {
     return Point(point.value.modifyVelocity(Vector.zero).modifyPosition(o.position))
