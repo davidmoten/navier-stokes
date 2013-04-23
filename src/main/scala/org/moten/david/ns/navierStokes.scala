@@ -575,7 +575,7 @@ import Sign._
 /**
  * Utility methods for a Grid of 3D points.
  */
-object Grid {
+object RegularGrid {
 
   type DirectionalNeighbours = Map[(Direction,NonZeroSign,HasPosition),HasPosition];
 
@@ -633,8 +633,8 @@ object Grid {
 /**
  * Regular or irregular grid of 3D points (vectors).
  */
-case class Grid(positions: Set[HasPosition]) {
-  val neighbours = Grid.getDirectionalNeighbours(positions)
+case class RegularGrid(positions: Set[HasPosition]) {
+  val neighbours = RegularGrid.getDirectionalNeighbours(positions)
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -657,7 +657,7 @@ object RegularGridSolver {
   /**
    * Returns neighbours in each direction relative to relativeTo.
    */
-  def getNeighbours(grid: Grid, position: HasPosition,
+  def getNeighbours(grid: RegularGrid, position: HasPosition,
     d: Direction, relativeTo: Option[Vector]): Positions = 
 	if (relativeTo.isDefined) {
       val sign = getSign(position,relativeTo,d)
@@ -665,7 +665,7 @@ object RegularGridSolver {
     } else 
       getNeighbours(grid,position,Positive)
 
-  private def getNeighbours(grid:Grid, position:HasPosition,
+  private def getNeighbours(grid:RegularGrid, position:HasPosition,
     sign:Sign): Positions = 
     sign match {
       case s:NonZeroSign => 
@@ -696,7 +696,7 @@ object RegularGridSolver {
       case None => t
     }
 
-  def getGradient(grid: Grid, position: HasPosition, direction: Direction,
+  def getGradient(grid: RegularGrid, position: HasPosition, direction: Direction,
     f: ValueFunction, relativeTo: Option[Vector], derivativeType: Derivative,
     overridden:Option[HasValue]):Double = {
     
@@ -848,11 +848,11 @@ object RegularGridSolver {
  */
 class RegularGridSolver(positions: Set[HasPosition], validate: Boolean) extends Solver {
   import Solver._
-  import Grid._
+  import RegularGrid._
   import scala.math._
   import RegularGridSolver._
 
-  private final val grid = new Grid(positions)
+  private final val grid = new RegularGrid(positions)
 
   if (validate)
     info("validated")

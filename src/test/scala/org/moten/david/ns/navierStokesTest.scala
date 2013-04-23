@@ -135,7 +135,7 @@ object Util {
 class GridDataTest {
   import Util._
   import Vector._
-  import Grid._
+  import RegularGrid._
 
   @Test
   def testGetDirectionalNeighbours() {
