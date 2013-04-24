@@ -617,12 +617,13 @@ object RegularGrid {
 
   def closestNeighbour(list:List[HasPosition], d:Direction, sign:NonZeroSign, p:HasPosition)
     :HasPosition = {
+    
+      //assumes list is sorted by increasing value in the Direction ordinate
       if (list.size == 1) 
           Empty(p.position)
       else {
           val index = list.indexOf(p);
 	      if (sign == Positive) {
-	          println("d="+d)
               if (index == list.size-1)
                  Empty(p.position)
               else 

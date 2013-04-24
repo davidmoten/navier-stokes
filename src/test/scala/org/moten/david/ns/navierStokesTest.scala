@@ -154,11 +154,10 @@ class GridDataTest {
   
   @Test
   def testClosestNeighbour() {
+  
     val list=List[HasPosition](Pos(1,1,1),Pos(2,1,1),Pos(3,1,1))
     
-    assertEquals(3.0,list(list.indexOf(list(2))).position.x,0.0001)
     val p = RegularGrid.closestNeighbour(list,X,Positive,Pos(1,1,1))
-    println("p="+p)
     assertEquals(2.0,p.position.x,0.0001)
   }
 
