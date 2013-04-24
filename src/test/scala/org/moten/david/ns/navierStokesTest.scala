@@ -192,7 +192,8 @@ class GridDataTest {
 
   @Test
   def checkDirectionalNeighboursReturnsEmptyMapOnGivenOnePointSet() {
-    //    assertEquals(Map(), getDirectionalNeighbours(Set(zero)))
+    //TODO
+    //assertEquals(Map(), getDirectionalNeighbours(Set(zero)))
   }
 }
 
