@@ -602,30 +602,38 @@ object RegularGrid {
           for (d<-directions; sign<-nonZeroSigns; p<-positions) 
               // use map above to return closest position for the direction and sign
               yield{ 
-                  closestNeighbour(map,d,sign,p)
+                  val closest = closestNeighbour(map,d,sign,p)
+                  ((d,sign,p),closest)
                }
       list.toMap
   }
 
   private def closestNeighbour(map: Map[(Vector,Direction),List[HasPosition]],
-     d:Direction, sign:NonZeroSign, p:HasPosition) = {
-      val pset = map.getOrElse((p.position.modify(d,0),d),unexpected)
-      if (pset.size == 1) 
-          ((d,sign,p), Empty(p.position))
+     d:Direction, sign:NonZeroSign, p:HasPosition)
+     :HasPosition = {
+      val plist = map.getOrElse((p.position.modify(d,0),d),unexpected)
+      closestNeighbour(plist,d,sign,p) 
+  }
+
+  def closestNeighbour(list:List[HasPosition], d:Direction, sign:NonZeroSign, p:HasPosition)
+    :HasPosition = {
+      if (list.size == 1) 
+          Empty(p.position)
       else {
-          val index = pset.indexOf(p);
-	      if (d == PositiveSign) {
-              if (index == pset.size-1)
-                  ((d,sign,p), Empty(p.position))
+          val index = list.indexOf(p);
+	      if (sign == Positive) {
+	          println("d="+d)
+              if (index == list.size-1)
+                 Empty(p.position)
               else 
-                  ((d,sign,p), pset(index+1))
+                 list(index+1)
           } else {
               if (index == 0)
-                  ((d,sign,p), Empty(p.position))
+                 Empty(p.position)
               else 
-                  ((d,sign,p), pset(index-1))
+                 list(index-1)
           }     
-	  } 
+	  }
   }
 
 }

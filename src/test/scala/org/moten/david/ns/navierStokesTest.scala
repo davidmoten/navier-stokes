@@ -136,6 +136,8 @@ class GridDataTest {
   import Util._
   import Vector._
   import RegularGrid._
+  import Sign._
+  import Throwing._
 
   case class Pos(x: Double, y: Double, z: Double) extends HasPosition {
     val position = Vector(x,y,z)
@@ -144,8 +146,20 @@ class GridDataTest {
   @Test
   def testGetDirectionalNeighbours() {
 	val positions=Set[HasPosition](Pos(1,1,1),Pos(2,1,1),Pos(3,1,1))
-
-	println(RegularGrid(positions).neighbours)
+	val n = RegularGrid(positions).neighbours
+	println(n)
+	assertEquals(Pos(2.0,1.0,1.0),n.getOrElse((X,Negative,Pos(3.0,1.0,1.0)),unexpected))
+	assertEquals(Pos(2.0,1.0,1.0),n.getOrElse((X,Positive,Pos(1.0,1.0,1.0)),unexpected))
+  }
+  
+  @Test
+  def testClosestNeighbour() {
+    val list=List[HasPosition](Pos(1,1,1),Pos(2,1,1),Pos(3,1,1))
+    
+    assertEquals(3.0,list(list.indexOf(list(2))).position.x,0.0001)
+    val p = RegularGrid.closestNeighbour(list,X,Positive,Pos(1,1,1))
+    println("p="+p)
+    assertEquals(2.0,p.position.x,0.0001)
   }
 
   @Test
