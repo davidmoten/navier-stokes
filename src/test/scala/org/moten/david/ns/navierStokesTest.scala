@@ -196,3 +196,43 @@ class GridDataTest {
   }
 }
 
+@Test
+class NavierStokesTest {
+  import Util._
+  import Throwing._
+
+  @Test
+  def testNavierStokesStepDoesNothingToDataInEquilibrium() {
+    info("equilibrium run")
+    //create a 5x5x5 regular grid with no movement and 0 surface pressure, 
+    //seawater kinematic viscosity is for 20 degrees C
+    val size = 20
+    info("creating map")
+    val positions:Set[HasPosition] = 
+      vectors(size)
+      .par
+      .map(v=> Value(
+        v,
+        velocity = Vector.zero,
+        pressure = abs(v.z * 1000 * 9.8),
+        density = 1000,
+        viscosity = 0.00000105)
+          )
+      .seq.toSet
+    info("creating Data")
+    val data = new RegularGridSolver(positions)
+    //    println(data)
+    val data2 = data.step(30)
+    //    println(data2)
+    //should be no change in any value after 30 steps
+    data.getPositions.foreach(p=>println(p))
+  }
+
+  private def equals(v1: Value, v2: Value, precision: Double): Boolean = {
+    abs(v1.pressure - v2.pressure) <= precision && equals(v1.velocity, v2.velocity, precision)
+  }
+
+  private def equals(v1: Vector, v2: Vector, precision: Double) = {
+    abs(v1.x - v2.x) <= precision && abs(v1.y - v2.y) <= precision && abs(v1.z - v2.z) <= precision
+  }
+}
