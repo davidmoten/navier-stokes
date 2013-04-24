@@ -596,7 +596,8 @@ object RegularGrid {
            .groupBy(_._1)
            .toList
            .map(x => (x._1,
-                      x._2.map(y=>y._2).sortBy(y=>y.position.get(x._1._2))))
+                      x._2.map(y=>y._2)
+                          .sortBy(y=>y.position.get(x._1._2))))
            .toMap
       val list = 
           for (d<-directions; sign<-nonZeroSigns; p<-positions) 
@@ -617,8 +618,7 @@ object RegularGrid {
 
   def closestNeighbour(list:List[HasPosition], d:Direction, sign:NonZeroSign, p:HasPosition)
     :HasPosition = {
-    
-      //assumes list is sorted by increasing value in the Direction ordinate
+      //can assumes list is sorted by increasing value in the Direction ordinate
       if (list.size == 1) 
           Empty(p.position)
       else {
