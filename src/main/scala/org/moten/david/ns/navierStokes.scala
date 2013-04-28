@@ -164,20 +164,18 @@ trait HasValue extends HasPosition {
   def value: Value
 }
 
-case class Boundary(value: Value)
-  extends HasValue {
-  val position = value.position
-}
-
 case class Point(value: Value)
   extends HasValue {
   val position = value.position
 }
 
-case class Obstacle(position: Vector)
-  extends HasPosition
+trait EdgeCandidate
 
-case class Empty(position: Vector) extends HasPosition {
+case class Obstacle(position: Vector)
+  extends HasPosition with EdgeCandidate
+
+case class Empty(position: Vector) extends HasPosition 
+  with EdgeCandidate {
   def this() {
     this(Vector.zero)
   }
@@ -613,8 +611,16 @@ object RegularGrid {
      d:Direction, sign:NonZeroSign, p:HasPosition)
      :HasPosition = {
       val plist = map.getOrElse((p.position.modify(d,0),d),unexpected)
+      if (!isEdge(plist.head))
+        unexpected("edge (obstacle or empty) not found at start of " + plist)
+      if (!isEdge(plist.last))
+        unexpected("edge (obstacle or empty) not found at end of " + plist)
       closestNeighbour(plist,d,sign,p) 
   }
+  
+  private def isEdge(p:HasPosition) = 
+    p.isInstanceOf[EdgeCandidate]
+  
 
   def closestNeighbour(list:List[HasPosition], d:Direction, sign:NonZeroSign, p:HasPosition)
     :HasPosition = {
@@ -658,9 +664,8 @@ object RegularGridSolver {
   type O = Obstacle
   type P = Point
   type A = HasPosition
-  type B = Boundary
   type E = Empty
-  type V = HasValue //either Point or Boundary
+  type V = HasValue 
   type Positions = Tuple3[HasPosition,HasPosition,HasPosition]
 
   /**
