@@ -161,8 +161,8 @@ trait HasPosition {
 }
 
 trait HasValue extends HasPosition {
-  def value: Value
-}
+  def value:Value
+} 
 
 case class Point(value: Value)
   extends HasValue {
@@ -662,7 +662,6 @@ object RegularGridSolver {
   import Value._
 
   type O = Obstacle
-  type P = Point
   type A = HasPosition
   type E = Empty
   type V = HasValue 
@@ -746,7 +745,7 @@ object RegularGridSolver {
   private def transform(
     v: (HasPosition, HasPosition, HasPosition, Sign)): (HasPosition, HasPosition, HasPosition) = {
 
-    //sign = ZeroSign  if no relativeTo and v2 is Point
+    //sign = ZeroSign  if no relativeTo and v2 is HasValue
     //sign= PositiveSign if relativeTo is on the v3 side 
     //sign = NegativeSign if relativeTo is on the v1 side
 
@@ -762,15 +761,15 @@ object RegularGridSolver {
     else 
     if (is[E,V,V](v))    (v._2, v._3, v._1)
     else
-    if (is[A,V,O](v))    transform((v._1, v._2, obstacleToPoint(toO(v._3), toV(v._2)), v._4))
+    if (is[A,V,O](v))    transform((v._1, v._2, obstacleToHasValue(toO(v._3), toV(v._2)), v._4))
     else
-    if (is[O,V,A](v))    transform((obstacleToPoint(toO(v._1), toV(v._2)), v._2, v._3, v._4))
+    if (is[O,V,A](v))    transform((obstacleToHasValue(toO(v._1), toV(v._2)), v._2, v._3, v._4))
     else 
     if (is[A,O,V,PositiveSign](v))
-                         (obstacleToPoint(toO(v._2), toV(v._3)), v._3, new Empty)
+                         (obstacleToHasValue(toO(v._2), toV(v._3)), v._3, new Empty)
     else 
     if (is[V,O,A,NegativeSign](v))
-                         (v._1, obstacleToPoint(toO(v._2), toV(v._1)), new Empty)
+                         (v._1, obstacleToHasValue(toO(v._2), toV(v._1)), new Empty)
     else unexpected
    
   }
@@ -808,7 +807,7 @@ object RegularGridSolver {
       man3.runtimeClass.isAssignableFrom(v._3.getClass) &&
       man4.runtimeClass.isAssignableFrom(v._4.getClass)
 
-  private def obstacleToPoint(o: Obstacle, point: HasValue): Point = {
+  private def obstacleToHasValue(o: Obstacle, point: HasValue): HasValue = {
     return Point(point.value.modifyVelocity(Vector.zero).modifyPosition(o.position))
   }
 
@@ -841,7 +840,7 @@ object RegularGridSolver {
   private def getSign(x: HasPosition, 
     relativeTo: Option[Vector], direction: Direction): Sign = {
     relativeTo match {
-      case None => if (!Point.getClass.isInstance(x))
+      case None => if (!x.isInstanceOf[HasValue])
         throw new RuntimeException(
           "relativeTo must be specified if " 
           + "calculating gradient at an obstacle or boundary")
