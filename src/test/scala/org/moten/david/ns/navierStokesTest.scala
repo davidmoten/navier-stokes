@@ -110,6 +110,11 @@ class NewtonsMethodTest {
 }
 
 object Util {
+
+  case class Pos(x: Double, y: Double, z: Double) extends HasPosition {
+    val position = Vector(x, y, z)
+  }
+
   def vectors(size: Int) = {
     val range = Range(1, size + 1)
     (for (
@@ -156,7 +161,7 @@ object Util {
                 val diff = if (list.length > 1)
                   list(list.length - 2).position.get(direction) - list(list.length - 1).position.get(direction)
                 else
-                  1
+                  -1
                 Set[HasPosition](Obstacle(list(list.length - 1).position.modify(direction, list(list.length - 1).position.get(direction) - diff)))
               }
             }
@@ -173,9 +178,23 @@ class UtilTest {
   import Util._
 
   @Test
-  def testAddBoundary {
+  def testAddBoundaryReturnsEmptySetGivenEmptySet {
     val set = addBoundary(Set[HasPosition]())
     assertTrue(set.isEmpty)
+  }
+
+  @Test
+  def testAddBoundaryReturnsBoundaryGivenSingletonSet {
+    val set = addBoundary(Set[HasPosition](Pos(1, 1, 1)))
+    info("singleton set with boundary=" + set)
+    assertEquals(7, set.size)
+    assertTrue(set.contains(Obstacle(Vector(1, 1, 0))))
+    assertTrue(set.contains(Obstacle(Vector(1, 1, 2))))
+    assertTrue(set.contains(Obstacle(Vector(1, 0, 1))))
+    assertTrue(set.contains(Obstacle(Vector(1, 2, 1))))
+    assertTrue(set.contains(Obstacle(Vector(0, 1, 1))))
+    assertTrue(set.contains(Obstacle(Vector(2, 1, 1))))
+    assertTrue(set.contains(Pos(1, 1, 1)))
   }
 
 }
@@ -187,10 +206,6 @@ class GridDataTest {
   import RegularGrid._
   import Sign._
   import Throwing._
-
-  case class Pos(x: Double, y: Double, z: Double) extends HasPosition {
-    val position = Vector(x, y, z)
-  }
 
   @Test
   def testGetDirectionalNeighbours() {
