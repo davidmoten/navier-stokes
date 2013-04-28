@@ -585,7 +585,20 @@ object RegularGrid {
       // so that for a given point on a regular grid we can decide what are the 
       // neighbouring points
       val map: Map[(Vector,Direction),List[HasPosition]] = 
-          positions.toList.map(
+          getPositionsByTwoOrdinatesAndDirection(positions)
+      val list = 
+          for (d<-directions; sign<-nonZeroSigns; p<-positions) 
+              // use map above to return closest position for the direction and sign
+              yield{ 
+                  val closest = closestNeighbour(map,d,sign,p)
+                  ((d,sign,p),closest)
+               }
+      list.toMap
+  }
+  
+  def getPositionsByTwoOrdinatesAndDirection(positions:Set[HasPosition])
+      :Map[(Vector,Direction),List[HasPosition]] = 
+    positions.toList.map(
             p => 
               directions.map( 
                   d => ((p.position.modify(d, 0),d),p)
@@ -597,15 +610,6 @@ object RegularGrid {
                       x._2.map(y=>y._2)
                           .sortBy(y=>y.position.get(x._1._2))))
            .toMap
-      val list = 
-          for (d<-directions; sign<-nonZeroSigns; p<-positions) 
-              // use map above to return closest position for the direction and sign
-              yield{ 
-                  val closest = closestNeighbour(map,d,sign,p)
-                  ((d,sign,p),closest)
-               }
-      list.toMap
-  }
 
   private def closestNeighbour(map: Map[(Vector,Direction),List[HasPosition]],
      d:Direction, sign:NonZeroSign, p:HasPosition)
@@ -662,7 +666,7 @@ object RegularGridSolver {
   import Value._
 
   type O = Obstacle
-  type A = HasPosition
+  type A = HasPosition //A for Any
   type E = Empty
   type V = HasValue 
   type Positions = Tuple3[HasPosition,HasPosition,HasPosition]

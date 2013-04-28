@@ -129,6 +129,29 @@ object Util {
     ) yield (i, j, k))
       .map(t => Vector(1.0 * t._1 / size, 1.0 * t._2 / size, -t._3))
   }
+
+  def addBoundary(positions: Set[HasPosition]): Set[HasPosition] = {
+
+    val extras =
+      RegularGrid.getPositionsByTwoOrdinatesAndDirection(positions)
+        .toList
+        .map(x => {
+          val direction = x._1._2
+          val list = x._2
+          list.head match {
+            case c: EdgeCandidate => Set.empty[HasPosition]
+            case _ => {
+              val diff = if (list.length > 1)
+                list(1).position.get(direction) - list(0).position.get(direction)
+              else
+                1
+              Set[HasPosition](Obstacle(list(0).position.modify(direction, list(0).position.get(direction) - diff)))
+            }
+          }
+        }).flatten
+
+    positions ++ extras
+  }
 }
 
 @Test
@@ -140,43 +163,43 @@ class GridDataTest {
   import Throwing._
 
   case class Pos(x: Double, y: Double, z: Double) extends HasPosition {
-    val position = Vector(x,y,z)
+    val position = Vector(x, y, z)
   }
 
   @Test
   def testGetDirectionalNeighbours() {
-	val positions=Set[HasPosition](Pos(1,1,1),Pos(2,1,1),Pos(3,1,1))
-	val n = RegularGrid(positions).neighbours
-	println(n)
-	assertEquals(Pos(2.0,1.0,1.0),n.getOrElse((X,Negative,Pos(3.0,1.0,1.0)),unexpected))
-	assertEquals(Pos(2.0,1.0,1.0),n.getOrElse((X,Positive,Pos(1.0,1.0,1.0)),unexpected))
+    val positions = Set[HasPosition](Pos(1, 1, 1), Pos(2, 1, 1), Pos(3, 1, 1))
+    val n = RegularGrid(positions).neighbours
+    println(n)
+    assertEquals(Pos(2.0, 1.0, 1.0), n.getOrElse((X, Negative, Pos(3.0, 1.0, 1.0)), unexpected))
+    assertEquals(Pos(2.0, 1.0, 1.0), n.getOrElse((X, Positive, Pos(1.0, 1.0, 1.0)), unexpected))
   }
-  
+
   @Test
   def testClosestNeighbourInPositiveDirectionFromLeftEndReturnsNextInList() {
-    val list=List[HasPosition](Pos(1,1,1),Pos(2,1,1),Pos(3,1,1))
-    val p = RegularGrid.closestNeighbour(list,X,Positive,Pos(1,1,1))
-    assertEquals(Pos(2,1,1),p)
+    val list = List[HasPosition](Pos(1, 1, 1), Pos(2, 1, 1), Pos(3, 1, 1))
+    val p = RegularGrid.closestNeighbour(list, X, Positive, Pos(1, 1, 1))
+    assertEquals(Pos(2, 1, 1), p)
   }
 
   @Test
   def testClosestNeighbourInPositiveDirectionFromRightEndReturnsEmpty() {
-    val list=List[HasPosition](Pos(1,1,1),Pos(2,1,1),Pos(3,1,1))
-    val p = RegularGrid.closestNeighbour(list,X,Positive,Pos(3,1,1))
+    val list = List[HasPosition](Pos(1, 1, 1), Pos(2, 1, 1), Pos(3, 1, 1))
+    val p = RegularGrid.closestNeighbour(list, X, Positive, Pos(3, 1, 1))
     assertTrue(p.isInstanceOf[Empty])
   }
-  
+
   @Test
   def testClosestNeighbourInNegativeDirectionFromRightEndReturnsPreviousInList() {
-    val list=List[HasPosition](Pos(1,1,1),Pos(2,1,1),Pos(3,1,1))
-    val p = RegularGrid.closestNeighbour(list,X,Negative,Pos(3,1,1))
-    assertEquals(Pos(2,1,1),p)
+    val list = List[HasPosition](Pos(1, 1, 1), Pos(2, 1, 1), Pos(3, 1, 1))
+    val p = RegularGrid.closestNeighbour(list, X, Negative, Pos(3, 1, 1))
+    assertEquals(Pos(2, 1, 1), p)
   }
-  
-   @Test
+
+  @Test
   def testClosestNeighbourInNegativeDirectionFromLeftEndReturnsEmpty() {
-    val list=List[HasPosition](Pos(1,1,1),Pos(2,1,1),Pos(3,1,1))
-    val p = RegularGrid.closestNeighbour(list,X,Negative,Pos(1,1,1))
+    val list = List[HasPosition](Pos(1, 1, 1), Pos(2, 1, 1), Pos(3, 1, 1))
+    val p = RegularGrid.closestNeighbour(list, X, Negative, Pos(1, 1, 1))
     assertTrue(p.isInstanceOf[Empty])
   }
 
@@ -192,7 +215,7 @@ class GridDataTest {
 
   @Test
   def checkDirectionalNeighboursReturns3DirectionsTimes2SignsGivenOnePointSet() {
-    assertEquals(6, getDirectionalNeighbours(Set(Empty(Vector(0,0,0)))).size)
+    assertEquals(6, getDirectionalNeighbours(Set(Empty(Vector(0, 0, 0)))).size)
   }
 }
 
@@ -208,24 +231,23 @@ class NavierStokesTest {
     //seawater kinematic viscosity is for 20 degrees C
     val size = 20
     info("creating map")
-    val positions:Set[HasPosition] = 
+    val positions: Set[HasPosition] =
       vectors(size)
-      .par
-      .map(v=> Value(
-        v,
-        velocity = Vector.zero,
-        pressure = abs(v.z * 1000 * 9.8),
-        density = 1000,
-        viscosity = 0.00000105)
-          )
-      .seq.toSet
+        .par
+        .map(v => Value(
+          v,
+          velocity = Vector.zero,
+          pressure = abs(v.z * 1000 * 9.8),
+          density = 1000,
+          viscosity = 0.00000105))
+        .seq.toSet
     info("creating Data")
     val data = new RegularGridSolver(positions)
     //    println(data)
     val data2 = data.step(30)
     //    println(data2)
     //should be no change in any value after 30 steps
-    data.getPositions.foreach(p=>println(p))
+    data.getPositions.foreach(p => println(p))
   }
 
   private def equals(v1: Value, v2: Value, precision: Double): Boolean = {
