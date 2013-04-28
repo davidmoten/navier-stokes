@@ -159,10 +159,10 @@ object Util {
               case c: EdgeCandidate => Set.empty[HasPosition]
               case _ => {
                 val diff = if (list.length > 1)
-                  list(list.length - 2).position.get(direction) - list(list.length - 1).position.get(direction)
+                  list(list.length - 1).position.get(direction) - list(list.length - 2).position.get(direction)
                 else
-                  -1
-                Set[HasPosition](Obstacle(list(list.length - 1).position.modify(direction, list(list.length - 1).position.get(direction) - diff)))
+                  1
+                Set[HasPosition](Obstacle(list(list.length - 1).position.modify(direction, list(list.length - 1).position.get(direction) + diff)))
               }
             }
           headExtras ++ tailExtras
@@ -195,6 +195,29 @@ class UtilTest {
     assertTrue(set.contains(Obstacle(Vector(0, 1, 1))))
     assertTrue(set.contains(Obstacle(Vector(2, 1, 1))))
     assertTrue(set.contains(Pos(1, 1, 1)))
+  }
+
+  @Test
+  def testAddBoundaryReturnsBoundaryGivenTwoPointsSet {
+    val set = addBoundary(Set[HasPosition](Pos(1, 1, 1), Pos(3, 1, 1)))
+    info("two points set with boundary=" + set)
+    assertEquals(12, set.size)
+
+    assertTrue(set.contains(Obstacle(Vector(-1, 1, 1))))
+    assertTrue(set.contains(Obstacle(Vector(5, 1, 1))))
+
+    assertTrue(set.contains(Obstacle(Vector(1, 1, 0))))
+    assertTrue(set.contains(Obstacle(Vector(1, 1, 2))))
+    assertTrue(set.contains(Obstacle(Vector(1, 0, 1))))
+    assertTrue(set.contains(Obstacle(Vector(1, 2, 1))))
+
+    assertTrue(set.contains(Obstacle(Vector(3, 1, 0))))
+    assertTrue(set.contains(Obstacle(Vector(3, 1, 2))))
+    assertTrue(set.contains(Obstacle(Vector(3, 0, 1))))
+    assertTrue(set.contains(Obstacle(Vector(3, 2, 1))))
+
+    assertTrue(set.contains(Pos(1, 1, 1)))
+    assertTrue(set.contains(Pos(3, 1, 1)))
   }
 
 }
