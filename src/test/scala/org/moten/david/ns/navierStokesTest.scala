@@ -138,20 +138,46 @@ object Util {
         .map(x => {
           val direction = x._1._2
           val list = x._2
-          list.head match {
-            case c: EdgeCandidate => Set.empty[HasPosition]
-            case _ => {
-              val diff = if (list.length > 1)
-                list(1).position.get(direction) - list(0).position.get(direction)
-              else
-                1
-              Set[HasPosition](Obstacle(list(0).position.modify(direction, list(0).position.get(direction) - diff)))
+          val headExtras =
+            list.head match {
+              case c: EdgeCandidate => Set.empty[HasPosition]
+              case _ => {
+                val diff = if (list.length > 1)
+                  list(1).position.get(direction) - list(0).position.get(direction)
+                else
+                  1
+                Set[HasPosition](Obstacle(list(0).position.modify(direction, list(0).position.get(direction) - diff)))
+              }
             }
-          }
+          val tailExtras =
+            list.tail match {
+              case c: EdgeCandidate => Set.empty[HasPosition]
+              case _ => {
+                val diff = if (list.length > 1)
+                  list(list.length - 2).position.get(direction) - list(list.length - 1).position.get(direction)
+                else
+                  1
+                Set[HasPosition](Obstacle(list(list.length - 1).position.modify(direction, list(list.length - 1).position.get(direction) - diff)))
+              }
+            }
+          headExtras ++ tailExtras
         }).flatten
 
     positions ++ extras
   }
+}
+
+@Test
+class UtilTest {
+
+  import Util._
+
+  @Test
+  def testAddBoundary {
+    val set = addBoundary(Set[HasPosition]())
+    assertTrue(set.isEmpty)
+  }
+
 }
 
 @Test
@@ -230,17 +256,19 @@ class NavierStokesTest {
     //create a 5x5x5 regular grid with no movement and 0 surface pressure, 
     //seawater kinematic viscosity is for 20 degrees C
     val size = 20
-    info("creating map")
+    info("creating positions")
     val positions: Set[HasPosition] =
-      vectors(size)
-        .par
-        .map(v => Value(
-          v,
-          velocity = Vector.zero,
-          pressure = abs(v.z * 1000 * 9.8),
-          density = 1000,
-          viscosity = 0.00000105))
-        .seq.toSet
+      addBoundary(
+        vectors(size)
+          .par
+          .map(v => Value(
+            v,
+            velocity = Vector.zero,
+            pressure = abs(v.z * 1000 * 9.8),
+            density = 1000,
+            viscosity = 0.00000105))
+          .seq.toSet)
+
     info("creating Data")
     val data = new RegularGridSolver(positions)
     //    println(data)
