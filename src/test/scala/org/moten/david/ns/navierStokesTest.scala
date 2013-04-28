@@ -151,7 +151,7 @@ object Util {
                   list(1).position.get(direction) - list(0).position.get(direction)
                 else
                   1
-                Set[HasPosition](Obstacle(list(0).position.modify(direction, list(0).position.get(direction) - diff)))
+                Set[HasPosition](Obstacle(list.head.position.add(direction, -diff)))
               }
             }
           val tailExtras =
@@ -159,10 +159,10 @@ object Util {
               case c: EdgeCandidate => Set.empty[HasPosition]
               case _ => {
                 val diff = if (list.length > 1)
-                  list(list.length - 1).position.get(direction) - list(list.length - 2).position.get(direction)
+                  list.last.position.get(direction) - list(list.length - 2).position.get(direction)
                 else
                   1
-                Set[HasPosition](Obstacle(list(list.length - 1).position.modify(direction, list(list.length - 1).position.get(direction) + diff)))
+                Set[HasPosition](Obstacle(list.last.position.add(direction, diff)))
               }
             }
           headExtras ++ tailExtras

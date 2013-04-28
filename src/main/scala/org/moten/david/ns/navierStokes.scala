@@ -118,6 +118,8 @@ case class Vector(x: Double, y: Double, z: Double) {
   }
   def ===(v: Vector) = this equals v
   def list = List(x, y, z)
+  def add(direction:Direction, d:Double) = 
+    modify(direction, get(direction)+d)
 }
 
 /**
