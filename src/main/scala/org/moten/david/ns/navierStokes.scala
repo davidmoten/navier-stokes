@@ -471,7 +471,7 @@ trait Solver {
     val value = position.value;
     getGradient(position, direction,
       (p: HasValue) => p.pressure,
-      None, FirstDerivative, None)
+      Some(position), FirstDerivative, None)
   }
 
   /**
@@ -516,7 +516,7 @@ trait Solver {
     def velocity(d: Direction) = (p: HasValue) => p.velocity.get(d)
     new Vector(directions.map(d =>
       getGradient(position, direction, velocity(d),
-        None, SecondDerivative, None)))
+        Some(position), SecondDerivative, None)))
   }
 
   /**
@@ -718,7 +718,6 @@ object RegularGridSolver {
   def getGradient(grid: RegularGrid, position: HasPosition, direction: Direction,
     f: ValueFunction, relativeTo: Option[Vector], derivativeType: Derivative,
     overridden:Option[HasValue]):Double = {
-    
     val n = overrideValue(
       getNeighbours(grid, position, direction, relativeTo),overridden)
     getGradient(f, n._1, n._2, n._3, direction, relativeTo, derivativeType)
@@ -732,14 +731,18 @@ object RegularGridSolver {
 
     val t = transform((v1, v2, v3, sign))
 
-    //cannot use match statement because of type erasure
-    if (is[V,V,V](t)) 
-      getGradient(f, toV(t._1), toV(t._2), toV(t._3), direction, derivativeType)
-    else 
-    if (is[V,V,E](t)) 
-      getGradient(f, toV(t._1), toV(t._2), direction, derivativeType)
-    else
-      unexpected
+    if (t._2.isInstanceOf[Obstacle])
+      0
+    else {
+      //cannot use match statement because of type erasure
+      if (is[V,V,V](t)) 
+        getGradient(f, toV(t._1), toV(t._2), toV(t._3), direction, derivativeType)
+      else 
+      if (is[V,V,E](t)) 
+        getGradient(f, toV(t._1), toV(t._2), direction, derivativeType)
+      else
+        unexpected
+      }
   }
 
   /**
@@ -764,7 +767,9 @@ object RegularGridSolver {
     if (is[V,V,V](v))    (v._1, v._2, v._3)
     else 
     if (is[V,V,E](v))    (v._1, v._2, v._3)
-    else 
+    else
+    if (v._2.isInstanceOf[Obstacle])    (v._1, v._2, v._3)
+    else  
     if (is[E,V,V](v))    (v._2, v._3, v._1)
     else
     if (is[A,V,O](v))    transform((v._1, v._2, obstacleToHasValue(toO(v._3), toV(v._2)), v._4))
@@ -776,7 +781,8 @@ object RegularGridSolver {
     else 
     if (is[V,O,A,NegativeSign](v))
                          (v._1, obstacleToHasValue(toO(v._2), toV(v._1)), new Empty)
-    else unexpected
+
+    else unexpected("not handled " + v)
    
   }
   
@@ -849,7 +855,7 @@ object RegularGridSolver {
       case None => if (!x.isInstanceOf[HasValue])
         throw new RuntimeException(
           "relativeTo must be specified if " 
-          + "calculating gradient at an obstacle or boundary")
+          + "calculating gradient at an obstacle or boundary: "+ x)
       else Sign.Zero
       case Some(v: Vector) =>
         if (signum(x.position.get(direction) - v.get(direction)) > 0)
