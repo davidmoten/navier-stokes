@@ -232,9 +232,8 @@ class GridDataTest {
 
   @Test
   def testGetDirectionalNeighbours() {
-    val positions = Set[HasPosition](Pos(1, 1, 1), Pos(2, 1, 1), Pos(3, 1, 1))
+    val positions = addBoundary(Set[HasPosition](Pos(1, 1, 1), Pos(2, 1, 1), Pos(3, 1, 1)))
     val n = RegularGrid(positions).neighbours
-    println(n)
     assertEquals(Pos(2.0, 1.0, 1.0), n.getOrElse((X, Negative, Pos(3.0, 1.0, 1.0)), unexpected))
     assertEquals(Pos(2.0, 1.0, 1.0), n.getOrElse((X, Positive, Pos(1.0, 1.0, 1.0)), unexpected))
   }
@@ -297,7 +296,7 @@ class NavierStokesTest {
     info("creating positions")
     val positions: Set[HasPosition] =
       addBoundary(
-        vectors(size)
+        List(Vector(1, 1, 1))
           .par
           .map(v => Value(
             v,

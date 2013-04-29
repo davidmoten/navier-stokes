@@ -689,7 +689,7 @@ object RegularGridSolver {
     sign match {
       case s:NonZeroSign => 
           (
-            grid.neighbours.getOrElse((X,s,position),unexpected),
+            grid.neighbours.getOrElse((X,s,position),unexpected("no entry for " + (X,s,position) + "\n" + grid.neighbours)),
             grid.neighbours.getOrElse((Y,s,position),unexpected),
             grid.neighbours.getOrElse((Z,s,position),unexpected)
           )
