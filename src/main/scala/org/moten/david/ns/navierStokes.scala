@@ -24,7 +24,7 @@ object Logger {
   import java.text.SimpleDateFormat
   val df = new SimpleDateFormat("HH:mm:ss.SSS")
   var infoEnabled = true
-  var debugEnabled = false
+  var debugEnabled = true
   def info(msg: => AnyRef) = if (infoEnabled)
     println(df.format(new Date()) + " " + msg)
   def debug(msg: => AnyRef) = if (debugEnabled)
@@ -471,7 +471,7 @@ trait Solver {
     val value = position.value;
     getGradient(position, direction,
       (p: HasValue) => p.pressure,
-      Some(position), FirstDerivative, None)
+      None, FirstDerivative, None)
   }
 
   /**
@@ -483,7 +483,7 @@ trait Solver {
     new Vector(directions.map(d =>
       getGradient(position, d,
         (p: HasValue) => p.pressure,
-        None, SecondDerivative, Some(overrideValue))))
+        Some(position), SecondDerivative, Some(overrideValue))))
 
   /**
    * Returns the gradient of the velocity vector at position in the given
@@ -678,24 +678,22 @@ object RegularGridSolver {
    */
   def getNeighbours(grid: RegularGrid, position: HasPosition,
     d: Direction, relativeTo: Option[Vector]): Positions = 
-	if (relativeTo.isDefined) {
-      val sign = getSign(position,relativeTo,d)
-      getNeighbours(grid,position,sign)
-    } else 
-      getNeighbours(grid,position,Positive)
-
-  private def getNeighbours(grid:RegularGrid, position:HasPosition,
-    sign:Sign): Positions = 
-    sign match {
-      case s:NonZeroSign => 
-          (
-            grid.neighbours.getOrElse((X,s,position),unexpected("no entry for " + (X,s,position) + "\n" + grid.neighbours)),
-            grid.neighbours.getOrElse((Y,s,position),unexpected),
-            grid.neighbours.getOrElse((Z,s,position),unexpected)
-          )
-      case _ => unexpected
+    relativeTo match { 
+      case Some(v:Vector) => {
+        val sign = getNonZeroSign(position,v,d)
+        getNeighbours(grid,position,sign)
+      }
+      case None =>
+        getNeighbours(grid,position,Positive)
     }
-  
+    
+  private def getNeighbours(grid:RegularGrid, position:HasPosition,
+    sign:NonZeroSign): Positions = 
+          (
+            grid.neighbours.getOrElse((X,sign,position),unexpected("no entry for " + (X,sign,position) + "\n" + grid.neighbours)),
+            grid.neighbours.getOrElse((Y,sign,position),unexpected),
+            grid.neighbours.getOrElse((Z,sign,position),unexpected)
+          )
 
   def overrideValue(t:HasPosition, overrideValue:Value):HasPosition = {
     if (t.position.equals(overrideValue.position))
@@ -727,13 +725,13 @@ object RegularGridSolver {
     v1: HasPosition, v2: HasPosition, v3: HasPosition, direction: Direction,
     relativeTo: Option[Vector], derivativeType: Derivative): Double = {
 
-    val sign = getSign(v2, relativeTo, direction)
-
-    val t = transform((v1, v2, v3, sign))
-
-    if (t._2.isInstanceOf[Obstacle])
-      0
+    if (v2.isInstanceOf[Obstacle])
+      unexpected("why ask for gradient at obstacle? " + v2)
     else {
+      val sign = getSign(v2, relativeTo, direction)
+
+      val t = transform((v1, v2, v3, sign))
+    
       //cannot use match statement because of type erasure
       if (is[V,V,V](t)) 
         getGradient(f, toV(t._1), toV(t._2), toV(t._3), direction, derivativeType)
@@ -831,10 +829,12 @@ object RegularGridSolver {
       case FirstDerivative =>
         (f(p3) - f(p1)) / (p3.position.get(direction) - p1.position.get(direction))
       case SecondDerivative =>
-        (f(p3) + f(p1) - 2 * f(p2)) / (p3.position.get(direction) - p1.position.get(direction))
+        (f(p3) + f(p1) - 2 * f(p2)) / sqr(p3.position.get(direction) - p1.position.get(direction))
       case _ => unexpected
     }
   }
+  
+  private def sqr(d:Double) = d * d
 
   private def getGradient(f: HasValue => Double,
     p1: HasValue, p2: HasValue,
@@ -864,6 +864,18 @@ object RegularGridSolver {
           Sign.Negative
     }
   }
+  
+  private def getNonZeroSign(x: HasPosition, 
+    relativeTo: Vector, direction: Direction): NonZeroSign = {
+        val sign = signum(x.position.get(direction) - relativeTo.get(direction))
+        if (sign == 0)
+          unexpected("x and relativePosition cannot be the same in direction=" + direction + ". x=" + x + ",relativeTo="+relativeTo) 
+        else if (sign > 0)
+          Sign.Positive
+        else
+          Sign.Negative
+  }
+  
 }
 
 /**
