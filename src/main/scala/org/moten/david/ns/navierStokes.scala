@@ -270,11 +270,8 @@ trait Solver {
 
   /**
    * Returns the gradient of the function f with respect to direction at the
-   * given position. `relativeTo` is used to calculate the gradient near and
-   *  on boundary and obstacle positions. In particular we need to handle
-   *  the case when the obstacle is of width one in a given direction and
-   *  thus has non-obstacle neighbours on both sides. The proxy field values
-   *  applied to the obstacle will depend the side of interest.
+   * given position. 
+   
    * @param position
    * @param direction
    * @param f
@@ -283,7 +280,6 @@ trait Solver {
    */
   def getGradient(position: HasPosition, direction: Direction,
     f: ValueFunction,
-    relativeTo: Option[Vector],
     derivativeType: Derivative, overrideValue: Option[HasValue]): Double
 
   /**
@@ -393,20 +389,18 @@ trait Solver {
     val pressureLaplacian = getPressureLaplacian(position, overrideValue)
     return pressureLaplacian +
       directions.map(d => getGradient(position, d,
-        gradientDot(d, relativeTo = Some(position.position)),
+        gradientDot(d),
         None, FirstDerivative, Some(overrideValue))).sum
   }
 
   /**
    * Returns the value of Del(Del dot v) for a given position.
    * @param direction
-   * @param relativeTo
    * @param v
    * @return
    */
-  def gradientDot(direction: Direction,
-    relativeTo: Option[Vector])(position: HasValue): Double =
-    getVelocityGradient(position, direction, relativeTo) * position.velocity
+  def gradientDot(direction: Direction)(position: HasValue): Double =
+    getVelocityGradient(position, direction) * position.velocity
 
   /**
    * Returns the` Value` at the given position after `timeDelta` in seconds
@@ -487,21 +481,15 @@ trait Solver {
 
   /**
    * Returns the gradient of the velocity vector at position in the given
-   * direction and for the purposes of obstacle gradient calculation includes the
-   * relativeTo position so a neighbour in the direction of relativeTo can be
-   * chosen paired with the position of the obstacle itself for the gradient
-   * calculation.
+   * direction. 
    * @param position
    * @param direction
-   * @param relativeTo
    * @return
    */
-  private def getVelocityGradient(position: HasValue, direction: Direction,
-    relativeTo: Option[Vector]): Vector = {
+  private def getVelocityGradient(position: HasValue, direction: Direction): Vector = {
     def velocity(d: Direction) = (p: HasValue) => p.value.velocity.get(d)
     new Vector(directions.map(
-      d => getGradient(position, direction, velocity(d),
-        relativeTo, FirstDerivative, None)))
+      d => getGradient(position, direction, velocity(d),FirstDerivative, None)))
   }
 
   /**
@@ -673,19 +661,6 @@ object RegularGridSolver {
   type V = HasValue 
   type Positions = Tuple3[HasPosition,HasPosition,HasPosition]
 
-  /**
-   * Returns neighbours in each direction relative to relativeTo.
-   */
-  def getNeighbours(grid: RegularGrid, position: HasPosition,
-    d: Direction, relativeTo: Option[Vector]): Positions = 
-    relativeTo match { 
-      case Some(v:Vector) => {
-        val sign = getNonZeroSign(position,v,d)
-        getNeighbours(grid,position,sign)
-      }
-      case None =>
-        getNeighbours(grid,position,Positive)
-    }
     
   private def getNeighbours(grid:RegularGrid, position:HasPosition,
     sign:NonZeroSign): Positions = 
@@ -717,13 +692,13 @@ object RegularGridSolver {
     f: ValueFunction, relativeTo: Option[Vector], derivativeType: Derivative,
     overridden:Option[HasValue]):Double = {
     val n = overrideValue(
-      getNeighbours(grid, position, direction, relativeTo),overridden)
-    getGradient(f, n._1, n._2, n._3, direction, relativeTo, derivativeType)
+      getNeighbours(grid, position, direction),overridden)
+    getGradient(f, n._1, n._2, n._3, direction, derivativeType)
   }
     
   def getGradient(f: ValueFunction,
     v1: HasPosition, v2: HasPosition, v3: HasPosition, direction: Direction,
-    relativeTo: Option[Vector], derivativeType: Derivative): Double = {
+     derivativeType: Derivative): Double = {
 
     if (v2.isInstanceOf[Obstacle])
       unexpected("why ask for gradient at obstacle? " + v2)
