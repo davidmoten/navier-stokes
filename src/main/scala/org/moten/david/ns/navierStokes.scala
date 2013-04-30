@@ -13,7 +13,6 @@
  */
 package org.moten.david.ns
 
-                       
 /////////////////////////////////////////////////////////////////////
 
 /**
@@ -118,8 +117,8 @@ case class Vector(x: Double, y: Double, z: Double) {
   }
   def ===(v: Vector) = this equals v
   def list = List(x, y, z)
-  def add(direction:Direction, d:Double) = 
-    modify(direction, get(direction)+d)
+  def add(direction: Direction, d: Double) =
+    modify(direction, get(direction) + d)
 }
 
 /**
@@ -163,8 +162,8 @@ trait HasPosition {
 }
 
 trait HasValue extends HasPosition {
-  def value:Value
-} 
+  def value: Value
+}
 
 case class Point(value: Value)
   extends HasValue {
@@ -176,7 +175,7 @@ trait EdgeCandidate
 case class Obstacle(position: Vector)
   extends HasPosition with EdgeCandidate
 
-case class Empty(position: Vector) extends HasPosition 
+case class Empty(position: Vector) extends HasPosition
   with EdgeCandidate {
   def this() {
     this(Vector.zero)
@@ -220,7 +219,7 @@ case class Value(position: Vector,
  */
 object Value {
   import scala.language.implicitConversions
-  
+
   implicit def toValue(v: HasValue) = v.value
   implicit def toPosition(p: HasPosition) = p.position
 }
@@ -270,8 +269,8 @@ trait Solver {
 
   /**
    * Returns the gradient of the function f with respect to direction at the
-   * given position. 
-   
+   * given position.
+   *
    * @param position
    * @param direction
    * @param f
@@ -320,9 +319,9 @@ trait Solver {
    * @return
    */
   private def getVelocityJacobian(position: HasValue) =
-    Matrix(getVelocityGradient(position, X, None),
-      getVelocityGradient(position, Y, None),
-      getVelocityGradient(position, Z, None))
+    Matrix(getVelocityGradient(position, X),
+      getVelocityGradient(position, Y),
+      getVelocityGradient(position, Z))
 
   /**
    * Returns the derivative of velocity over time using this
@@ -390,7 +389,7 @@ trait Solver {
     return pressureLaplacian +
       directions.map(d => getGradient(position, d,
         gradientDot(d),
-        None, FirstDerivative, Some(overrideValue))).sum
+        FirstDerivative, Some(overrideValue))).sum
   }
 
   /**
@@ -465,7 +464,7 @@ trait Solver {
     val value = position.value;
     getGradient(position, direction,
       (p: HasValue) => p.pressure,
-      None, FirstDerivative, None)
+      FirstDerivative, None)
   }
 
   /**
@@ -477,11 +476,11 @@ trait Solver {
     new Vector(directions.map(d =>
       getGradient(position, d,
         (p: HasValue) => p.pressure,
-        Some(position), SecondDerivative, Some(overrideValue))))
+        SecondDerivative, Some(overrideValue))))
 
   /**
    * Returns the gradient of the velocity vector at position in the given
-   * direction. 
+   * direction.
    * @param position
    * @param direction
    * @return
@@ -489,7 +488,7 @@ trait Solver {
   private def getVelocityGradient(position: HasValue, direction: Direction): Vector = {
     def velocity(d: Direction) = (p: HasValue) => p.value.velocity.get(d)
     new Vector(directions.map(
-      d => getGradient(position, direction, velocity(d),FirstDerivative, None)))
+      d => getGradient(position, direction, velocity(d), FirstDerivative, None)))
   }
 
   /**
@@ -504,7 +503,7 @@ trait Solver {
     def velocity(d: Direction) = (p: HasValue) => p.velocity.get(d)
     new Vector(directions.map(d =>
       getGradient(position, direction, velocity(d),
-        Some(position), SecondDerivative, None)))
+        SecondDerivative, None)))
   }
 
   /**
@@ -551,7 +550,7 @@ object Sign {
   val Positive = PositiveSign()
   val Negative = NegativeSign()
   val Zero = ZeroSign();
-  val nonZeroSigns = List(Positive,Negative)
+  val nonZeroSigns = List(Positive, Negative)
 }
 
 import Sign._
@@ -565,76 +564,69 @@ import Sign._
  */
 object RegularGrid {
 
-  type DirectionalNeighbours = Map[(Direction,NonZeroSign,HasPosition),HasPosition];
+  type DirectionalNeighbours = Map[(Direction, NonZeroSign, HasPosition), HasPosition];
 
-  def getDirectionalNeighbours( positions:Set[HasPosition]): DirectionalNeighbours = {
+  def getDirectionalNeighbours(positions: Set[HasPosition]): DirectionalNeighbours = {
 
-      // get a map of (vector, direction) 
-      //                -> List of positions sorted by direction ordinate
-      // which is for each direction say x a map of ((0,y,z), X) -> ((0.8,y,z),(1.2,y,z))
-      // so that for a given point on a regular grid we can decide what are the 
-      // neighbouring points
-      val map: Map[(Vector,Direction),List[HasPosition]] = 
-          getPositionsByTwoOrdinatesAndDirection(positions)
-      val list = 
-          for (d<-directions; sign<-nonZeroSigns; p<-positions) 
-              // use map above to return closest position for the direction and sign
-              yield{ 
-                  val closest = closestNeighbour(map,d,sign,p)
-                  ((d,sign,p),closest)
-               }
-      list.toMap
+    // get a map of (vector, direction) 
+    //                -> List of positions sorted by direction ordinate
+    // which is for each direction say x a map of ((0,y,z), X) -> ((0.8,y,z),(1.2,y,z))
+    // so that for a given point on a regular grid we can decide what are the 
+    // neighbouring points
+    val map: Map[(Vector, Direction), List[HasPosition]] =
+      getPositionsByTwoOrdinatesAndDirection(positions)
+    val list =
+      for (d <- directions; sign <- nonZeroSigns; p <- positions) // use map above to return closest position for the direction and sign
+      yield {
+        val closest = closestNeighbour(map, d, sign, p)
+        ((d, sign, p), closest)
+      }
+    list.toMap
   }
-  
-  def getPositionsByTwoOrdinatesAndDirection(positions:Set[HasPosition])
-      :Map[(Vector,Direction),List[HasPosition]] = 
+
+  def getPositionsByTwoOrdinatesAndDirection(positions: Set[HasPosition]): Map[(Vector, Direction), List[HasPosition]] =
     positions.toList.map(
-            p => 
-              directions.map( 
-                  d => ((p.position.modify(d, 0),d),p)
-              )
-          ).flatten 
-           .groupBy(_._1)
-           .toList
-           .map(x => (x._1,
-                      x._2.map(y=>y._2)
-                          .sortBy(y=>y.position.get(x._1._2))))
-           .toMap
+      p =>
+        directions.map(
+          d => ((p.position.modify(d, 0), d), p))).flatten
+      .groupBy(_._1)
+      .toList
+      .map(x => (x._1,
+        x._2.map(y => y._2)
+        .sortBy(y => y.position.get(x._1._2))))
+      .toMap
 
-  private def closestNeighbour(map: Map[(Vector,Direction),List[HasPosition]],
-     d:Direction, sign:NonZeroSign, p:HasPosition)
-     :HasPosition = {
-      val plist = map.getOrElse((p.position.modify(d,0),d),unexpected)
-      if (!isEdge(plist.head))
-        unexpected("edge (obstacle or empty) not found at start of " + plist)
-      if (!isEdge(plist.last))
-        unexpected("edge (obstacle or empty) not found at end of " + plist)
-      closestNeighbour(plist,d,sign,p) 
+  private def closestNeighbour(map: Map[(Vector, Direction), List[HasPosition]],
+    d: Direction, sign: NonZeroSign, p: HasPosition): HasPosition = {
+    val plist = map.getOrElse((p.position.modify(d, 0), d), unexpected)
+    if (!isEdge(plist.head))
+      unexpected("edge (obstacle or empty) not found at start of " + plist)
+    if (!isEdge(plist.last))
+      unexpected("edge (obstacle or empty) not found at end of " + plist)
+    closestNeighbour(plist, d, sign, p)
   }
-  
-  private def isEdge(p:HasPosition) = 
-    p.isInstanceOf[EdgeCandidate]
-  
 
-  def closestNeighbour(list:List[HasPosition], d:Direction, sign:NonZeroSign, p:HasPosition)
-    :HasPosition = {
-      //can assumes list is sorted by increasing value in the Direction ordinate
-      if (list.size == 1) 
+  private def isEdge(p: HasPosition) =
+    p.isInstanceOf[EdgeCandidate]
+
+  def closestNeighbour(list: List[HasPosition], d: Direction, sign: NonZeroSign, p: HasPosition): HasPosition = {
+    //can assumes list is sorted by increasing value in the Direction ordinate
+    if (list.size == 1)
+      Empty(p.position)
+    else {
+      val index = list.indexOf(p);
+      if (sign == Positive) {
+        if (index == list.size - 1)
           Empty(p.position)
-      else {
-          val index = list.indexOf(p);
-	      if (sign == Positive) {
-              if (index == list.size-1)
-                 Empty(p.position)
-              else 
-                 list(index+1)
-          } else {
-              if (index == 0)
-                 Empty(p.position)
-              else 
-                 list(index-1)
-          }     
-	  }
+        else
+          list(index + 1)
+      } else {
+        if (index == 0)
+          Empty(p.position)
+        else
+          list(index - 1)
+      }
+    }
   }
 
 }
@@ -658,64 +650,60 @@ object RegularGridSolver {
   type O = Obstacle
   type A = HasPosition //A for Any
   type E = Empty
-  type V = HasValue 
-  type Positions = Tuple3[HasPosition,HasPosition,HasPosition]
+  type V = HasValue
+  type Positions = Tuple3[HasPosition, HasPosition, HasPosition]
 
-    
-  private def getNeighbours(grid:RegularGrid, position:HasPosition,
-    sign:NonZeroSign): Positions = 
-          (
-            grid.neighbours.getOrElse((X,sign,position),unexpected("no entry for " + (X,sign,position) + "\n" + grid.neighbours)),
-            grid.neighbours.getOrElse((Y,sign,position),unexpected),
-            grid.neighbours.getOrElse((Z,sign,position),unexpected)
-          )
+  private def getNeighbours(grid: RegularGrid, position: HasPosition,
+    direction: Direction): Positions =
+    (
+      grid.neighbours.getOrElse((direction, Negative, position), unexpected("no entry for " + (direction, Negative, position) + "\n" + grid.neighbours)),
+      position,
+      grid.neighbours.getOrElse((direction, Positive, position), unexpected("no entry for " + (direction, Positive, position) + "\n" + grid.neighbours)))
 
-  def overrideValue(t:HasPosition, overrideValue:Value):HasPosition = {
+  def overrideValue(t: HasPosition, overrideValue: Value): HasPosition = {
     if (t.position.equals(overrideValue.position))
       overrideValue
-    else 
+    else
       t
   }
 
-  def overrideValue(t:Positions, v : HasValue):Positions =
-    (overrideValue(t._1,v),
-     overrideValue(t._2,v),
-     overrideValue(t._3,v))
+  def overrideValue(t: Positions, v: HasValue): Positions =
+    (overrideValue(t._1, v),
+      overrideValue(t._2, v),
+      overrideValue(t._3, v))
 
-  def overrideValue(t:Positions, v : Option[HasValue]):Positions =
+  def overrideValue(t: Positions, v: Option[HasValue]): Positions =
     v match {
-      case Some(value:HasValue) => overrideValue(t,value)
+      case Some(value: HasValue) => overrideValue(t, value)
       case None => t
     }
 
   def getGradient(grid: RegularGrid, position: HasPosition, direction: Direction,
-    f: ValueFunction, relativeTo: Option[Vector], derivativeType: Derivative,
-    overridden:Option[HasValue]):Double = {
+    f: ValueFunction, derivativeType: Derivative,
+    overridden: Option[HasValue]): Double = {
     val n = overrideValue(
-      getNeighbours(grid, position, direction),overridden)
-    getGradient(f, n._1, n._2, n._3, direction, derivativeType)
+      getNeighbours(grid, position, direction), overridden)
+    getGradient(f, n._1, n._2, n._3, direction, derivativeType, None)
   }
-    
+
   def getGradient(f: ValueFunction,
     v1: HasPosition, v2: HasPosition, v3: HasPosition, direction: Direction,
-     derivativeType: Derivative): Double = {
+    derivativeType: Derivative): Double = {
 
     if (v2.isInstanceOf[Obstacle])
       unexpected("why ask for gradient at obstacle? " + v2)
     else {
-      val sign = getSign(v2, relativeTo, direction)
 
-      val t = transform((v1, v2, v3, sign))
-    
+      val t = transform((v1, v2, v3))
+
       //cannot use match statement because of type erasure
-      if (is[V,V,V](t)) 
+      if (is[V, V, V](t))
         getGradient(f, toV(t._1), toV(t._2), toV(t._3), direction, derivativeType)
-      else 
-      if (is[V,V,E](t)) 
+      else if (is[V, V, E](t))
         getGradient(f, toV(t._1), toV(t._2), direction, derivativeType)
       else
         unexpected
-      }
+    }
   }
 
   /**
@@ -725,7 +713,7 @@ object RegularGridSolver {
    * @return
    */
   private def transform(
-    v: (HasPosition, HasPosition, HasPosition, Sign)): (HasPosition, HasPosition, HasPosition) = {
+    v: (HasPosition, HasPosition, HasPosition)): (HasPosition, HasPosition, HasPosition) = {
 
     //sign = ZeroSign  if no relativeTo and v2 is HasValue
     //sign= PositiveSign if relativeTo is on the v3 side 
@@ -736,59 +724,40 @@ object RegularGridSolver {
     //  case v: (V, V, V, Sign) => (v._1, v._2, v._3)
     // ...
     // but type erasure means we cannot
-    
-    if (is[V,V,V](v))    (v._1, v._2, v._3)
-    else 
-    if (is[V,V,E](v))    (v._1, v._2, v._3)
-    else
-    if (v._2.isInstanceOf[Obstacle])    (v._1, v._2, v._3)
-    else  
-    if (is[E,V,V](v))    (v._2, v._3, v._1)
-    else
-    if (is[A,V,O](v))    transform((v._1, v._2, obstacleToHasValue(toO(v._3), toV(v._2)), v._4))
-    else
-    if (is[O,V,A](v))    transform((obstacleToHasValue(toO(v._1), toV(v._2)), v._2, v._3, v._4))
-    else 
-    if (is[A,O,V,PositiveSign](v))
-                         (obstacleToHasValue(toO(v._2), toV(v._3)), v._3, new Empty)
-    else 
-    if (is[V,O,A,NegativeSign](v))
-                         (v._1, obstacleToHasValue(toO(v._2), toV(v._1)), new Empty)
+
+    if (is[V, V, V](v)) (v._1, v._2, v._3)
+    else if (is[V, V, E](v)) (v._1, v._2, v._3)
+    else if (v._2.isInstanceOf[Obstacle]) (v._1, v._2, v._3)
+    else if (is[E, V, V](v)) (v._2, v._3, v._1)
+    else if (is[A, V, O](v)) transform((v._1, v._2, obstacleToHasValue(toO(v._3), toV(v._2))))
+    else if (is[O, V, A](v)) transform((obstacleToHasValue(toO(v._1), toV(v._2)), v._2, v._3))
+    //    else 
+    //    if (is[A,O,V](v))
+    //                        (obstacleToHasValue(toO(v._2), toV(v._3)), v._3, new Empty)
+    //    else 
+    //    if (is[V,O,A](v))
+    //                         (v._1, obstacleToHasValue(toO(v._2), toV(v._1)), new Empty)
 
     else unexpected("not handled " + v)
-   
   }
-  
-  private def toO(p:HasPosition) = p.asInstanceOf[O]
-  
-  private def toV(p:HasPosition) = p.asInstanceOf[V]
 
-  private def is[T1<:HasPosition,
-                 T2<:HasPosition,
-                 T3<:HasPosition] 
-    (v:(HasPosition, HasPosition, HasPosition, Sign))
-        (implicit man1:Manifest[T1],man2:Manifest[T2],man3:Manifest[T3]) = 
-      man1.runtimeClass.isAssignableFrom(v._1.getClass) && 
-      man2.runtimeClass.isAssignableFrom(v._2.getClass) && 
+  private def toO(p: HasPosition) = p.asInstanceOf[O]
+
+  private def toV(p: HasPosition) = p.asInstanceOf[V]
+
+  private def is[T1 <: HasPosition, T2 <: HasPosition, T3 <: HasPosition](v: (HasPosition, HasPosition, HasPosition, Sign))(implicit man1: Manifest[T1], man2: Manifest[T2], man3: Manifest[T3]) =
+    man1.runtimeClass.isAssignableFrom(v._1.getClass) &&
+      man2.runtimeClass.isAssignableFrom(v._2.getClass) &&
       man3.runtimeClass.isAssignableFrom(v._3.getClass)
-      
-  private def is[T1<:HasPosition,
-                 T2<:HasPosition,
-                 T3<:HasPosition] 
-    (v:(HasPosition, HasPosition, HasPosition))
-        (implicit man1:Manifest[T1],man2:Manifest[T2],man3:Manifest[T3]) = 
-      man1.runtimeClass.isAssignableFrom(v._1.getClass) && 
-      man2.runtimeClass.isAssignableFrom(v._2.getClass) && 
+
+  private def is[T1 <: HasPosition, T2 <: HasPosition, T3 <: HasPosition](v: (HasPosition, HasPosition, HasPosition))(implicit man1: Manifest[T1], man2: Manifest[T2], man3: Manifest[T3]) =
+    man1.runtimeClass.isAssignableFrom(v._1.getClass) &&
+      man2.runtimeClass.isAssignableFrom(v._2.getClass) &&
       man3.runtimeClass.isAssignableFrom(v._3.getClass)
-      
-  private def is[T1<:HasPosition,
-                 T2<:HasPosition,
-                 T3<:HasPosition,
-                 S<:Sign] 
-    (v:(HasPosition, HasPosition, HasPosition, Sign))
-        (implicit man1:Manifest[T1],man2:Manifest[T2],man3:Manifest[T3],man4:Manifest[S]) = 
-      man1.runtimeClass.isAssignableFrom(v._1.getClass) && 
-      man2.runtimeClass.isAssignableFrom(v._2.getClass) && 
+
+  private def is[T1 <: HasPosition, T2 <: HasPosition, T3 <: HasPosition, S <: Sign](v: (HasPosition, HasPosition, HasPosition, Sign))(implicit man1: Manifest[T1], man2: Manifest[T2], man3: Manifest[T3], man4: Manifest[S]) =
+    man1.runtimeClass.isAssignableFrom(v._1.getClass) &&
+      man2.runtimeClass.isAssignableFrom(v._2.getClass) &&
       man3.runtimeClass.isAssignableFrom(v._3.getClass) &&
       man4.runtimeClass.isAssignableFrom(v._4.getClass)
 
@@ -808,8 +777,8 @@ object RegularGridSolver {
       case _ => unexpected
     }
   }
-  
-  private def sqr(d:Double) = d * d
+
+  private def sqr(d: Double) = d * d
 
   private def getGradient(f: HasValue => Double,
     p1: HasValue, p2: HasValue,
@@ -824,13 +793,13 @@ object RegularGridSolver {
     }
   }
 
-  private def getSign(x: HasPosition, 
+  private def getSign(x: HasPosition,
     relativeTo: Option[Vector], direction: Direction): Sign = {
     relativeTo match {
       case None => if (!x.isInstanceOf[HasValue])
         throw new RuntimeException(
-          "relativeTo must be specified if " 
-          + "calculating gradient at an obstacle or boundary: "+ x)
+          "relativeTo must be specified if "
+            + "calculating gradient at an obstacle or boundary: " + x)
       else Sign.Zero
       case Some(v: Vector) =>
         if (signum(x.position.get(direction) - v.get(direction)) > 0)
@@ -839,18 +808,18 @@ object RegularGridSolver {
           Sign.Negative
     }
   }
-  
-  private def getNonZeroSign(x: HasPosition, 
+
+  private def getNonZeroSign(x: HasPosition,
     relativeTo: Vector, direction: Direction): NonZeroSign = {
-        val sign = signum(x.position.get(direction) - relativeTo.get(direction))
-        if (sign == 0)
-          unexpected("x and relativePosition cannot be the same in direction=" + direction + ". x=" + x + ",relativeTo="+relativeTo) 
-        else if (sign > 0)
-          Sign.Positive
-        else
-          Sign.Negative
+    val sign = signum(x.position.get(direction) - relativeTo.get(direction))
+    if (sign == 0)
+      unexpected("x and relativePosition cannot be the same in direction=" + direction + ". x=" + x + ",relativeTo=" + relativeTo)
+    else if (sign > 0)
+      Sign.Positive
+    else
+      Sign.Negative
   }
-  
+
 }
 
 /**
@@ -875,10 +844,10 @@ class RegularGridSolver(positions: Set[HasPosition], validate: Boolean) extends 
   override def getPositions = grid.positions
 
   override def getGradient(position: HasPosition, direction: Direction,
-    f: ValueFunction, relativeTo: Option[Vector],
+    f: ValueFunction,
     derivativeType: Derivative, overrideValue: Option[HasValue]): Double =
     return RegularGridSolver.getGradient(grid, position, direction,
-      f, relativeTo, derivativeType,overrideValue);
+      f, derivativeType, overrideValue);
 
   override def step(timestep: Double): Solver = {
     info("creating parallel collection")
