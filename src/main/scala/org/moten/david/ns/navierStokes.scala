@@ -683,7 +683,7 @@ object RegularGridSolver {
     overridden: Option[HasValue]): Double = {
     val n = overrideValue(
       getNeighbours(grid, position, direction), overridden)
-    getGradient(f, n._1, n._2, n._3, direction, derivativeType, None)
+    getGradient(f, n._1, n._2, n._3, direction, derivativeType)
   }
 
   def getGradient(f: ValueFunction,
