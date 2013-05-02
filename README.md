@@ -5,7 +5,7 @@ Scala code to model water movement.
 
 *Status*: pre-alpha
 
-*Purpose*: 
+##Purpose: 
 
 Provide a clear and concise solver for the Navier Stokes equations over a rectangular grid domain (regularly gridded) for an incompressible liquid (sea water). 
 
