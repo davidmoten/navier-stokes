@@ -564,7 +564,7 @@ import Sign._
  */
 object RegularGrid {
 
-  type DirectionalNeighbours = Map[(Direction, NonZeroSign, HasPosition), HasPosition];
+  type DirectionalNeighbours = Map[(Direction, NonZeroSign, Vector), HasPosition];
 
   def getDirectionalNeighbours(positions: Set[HasPosition]): DirectionalNeighbours = {
 
@@ -578,8 +578,8 @@ object RegularGrid {
     val list =
       for (d <- directions; sign <- nonZeroSigns; p <- positions) // use map above to return closest position for the direction and sign
       yield {
-        val closest = closestNeighbour(map, d, sign, p)
-        ((d, sign, p), closest)
+        val closest = closestNeighbour(map, d, sign, p.position)
+        ((d, sign, p.position), closest)
       }
     list.toMap
   }
@@ -597,32 +597,35 @@ object RegularGrid {
       .toMap
 
   private def closestNeighbour(map: Map[(Vector, Direction), List[HasPosition]],
-    d: Direction, sign: NonZeroSign, p: HasPosition): HasPosition = {
-    val plist = map.getOrElse((p.position.modify(d, 0), d), unexpected)
+    d: Direction, sign: NonZeroSign, p: Vector): HasPosition = {
+    val plist = map.getOrElse((p.modify(d, 0), d), unexpected)
+
+    //validate boundaries
     if (!isEdge(plist.head))
       unexpected("edge (obstacle or empty) not found at start of " + plist)
     if (!isEdge(plist.last))
       unexpected("edge (obstacle or empty) not found at end of " + plist)
+
     closestNeighbour(plist, d, sign, p)
   }
 
   private def isEdge(p: HasPosition) =
     p.isInstanceOf[EdgeCandidate]
 
-  def closestNeighbour(list: List[HasPosition], d: Direction, sign: NonZeroSign, p: HasPosition): HasPosition = {
+  def closestNeighbour(list: List[HasPosition], d: Direction, sign: NonZeroSign, p: Vector): HasPosition = {
     //can assumes list is sorted by increasing value in the Direction ordinate
     if (list.size == 1)
-      Empty(p.position)
+      Empty(p)
     else {
-      val index = list.indexOf(p);
+      val index = list.map(_.position).indexOf(p);
       if (sign == Positive) {
         if (index == list.size - 1)
-          Empty(p.position)
+          Empty(p)
         else
           list(index + 1)
       } else {
         if (index == 0)
-          Empty(p.position)
+          Empty(p)
         else
           list(index - 1)
       }
@@ -637,8 +640,8 @@ object RegularGrid {
 case class RegularGrid(positions: Set[HasPosition]) {
   private val map = RegularGrid.getDirectionalNeighbours(positions)
 
-  def neighbours(direction: Direction, sign: NonZeroSign, p: HasPosition) =
-    map.getOrElse((direction, sign, p), unexpected("no entry for " + (direction, sign, p)))
+  def neighbours(direction: Direction, sign: NonZeroSign, p: Vector) =
+    map.getOrElse((direction, sign, p), unexpected("no entry for " + (direction, sign, p) + "\n" + map))
 }
 
 /////////////////////////////////////////////////////////////////////
