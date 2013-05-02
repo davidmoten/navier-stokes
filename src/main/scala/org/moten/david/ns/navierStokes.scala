@@ -718,10 +718,6 @@ object RegularGridSolver {
   private def transform(
     v: (HasPosition, HasPosition, HasPosition)): (HasPosition, HasPosition, HasPosition) = {
 
-    //sign = ZeroSign  if no relativeTo and v2 is HasValue
-    //sign= PositiveSign if relativeTo is on the v3 side 
-    //sign = NegativeSign if relativeTo is on the v1 side
-
     //would like to use a match statement like
     //t match {
     //  case v: (V, V, V, Sign) => (v._1, v._2, v._3)
@@ -752,9 +748,8 @@ object RegularGridSolver {
       man2.runtimeClass.isAssignableFrom(v._2.getClass) &&
       man3.runtimeClass.isAssignableFrom(v._3.getClass)
 
-  private def obstacleToHasValue(o: Obstacle, point: HasValue): HasValue = {
+  private def obstacleToHasValue(o: Obstacle, point: HasValue): HasValue =
     return Point(point.value.modifyVelocity(Vector.zero).modifyPosition(o.position))
-  }
 
   private def getGradient(f: HasValue => Double,
     p1: HasValue, p2: HasValue, p3: HasValue,
