@@ -747,21 +747,10 @@ object RegularGridSolver {
 
   private def toV(p: HasPosition) = p.asInstanceOf[V]
 
-  private def is[T1 <: HasPosition, T2 <: HasPosition, T3 <: HasPosition](v: (HasPosition, HasPosition, HasPosition, Sign))(implicit man1: Manifest[T1], man2: Manifest[T2], man3: Manifest[T3]) =
-    man1.runtimeClass.isAssignableFrom(v._1.getClass) &&
-      man2.runtimeClass.isAssignableFrom(v._2.getClass) &&
-      man3.runtimeClass.isAssignableFrom(v._3.getClass)
-
   private def is[T1 <: HasPosition, T2 <: HasPosition, T3 <: HasPosition](v: (HasPosition, HasPosition, HasPosition))(implicit man1: Manifest[T1], man2: Manifest[T2], man3: Manifest[T3]) =
     man1.runtimeClass.isAssignableFrom(v._1.getClass) &&
       man2.runtimeClass.isAssignableFrom(v._2.getClass) &&
       man3.runtimeClass.isAssignableFrom(v._3.getClass)
-
-  private def is[T1 <: HasPosition, T2 <: HasPosition, T3 <: HasPosition, S <: Sign](v: (HasPosition, HasPosition, HasPosition, Sign))(implicit man1: Manifest[T1], man2: Manifest[T2], man3: Manifest[T3], man4: Manifest[S]) =
-    man1.runtimeClass.isAssignableFrom(v._1.getClass) &&
-      man2.runtimeClass.isAssignableFrom(v._2.getClass) &&
-      man3.runtimeClass.isAssignableFrom(v._3.getClass) &&
-      man4.runtimeClass.isAssignableFrom(v._4.getClass)
 
   private def obstacleToHasValue(o: Obstacle, point: HasValue): HasValue = {
     return Point(point.value.modifyVelocity(Vector.zero).modifyPosition(o.position))
