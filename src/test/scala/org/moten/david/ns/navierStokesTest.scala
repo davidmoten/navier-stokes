@@ -233,9 +233,9 @@ class GridDataTest {
   @Test
   def testGetDirectionalNeighbours() {
     val positions = addBoundary(Set[HasPosition](Pos(1, 1, 1), Pos(2, 1, 1), Pos(3, 1, 1)))
-    val n = RegularGrid(positions).neighbours
-    assertEquals(Pos(2.0, 1.0, 1.0), n.getOrElse((X, Negative, Pos(3.0, 1.0, 1.0)), unexpected))
-    assertEquals(Pos(2.0, 1.0, 1.0), n.getOrElse((X, Positive, Pos(1.0, 1.0, 1.0)), unexpected))
+    val n = RegularGrid(positions).neighbours _
+    assertEquals(Pos(2.0, 1.0, 1.0), n(X, Negative, Pos(3.0, 1.0, 1.0)))
+    assertEquals(Pos(2.0, 1.0, 1.0), n(X, Positive, Pos(1.0, 1.0, 1.0)))
   }
 
   @Test

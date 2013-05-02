@@ -635,7 +635,10 @@ object RegularGrid {
  * Regular or irregular grid of 3D points (vectors).
  */
 case class RegularGrid(positions: Set[HasPosition]) {
-  val neighbours = RegularGrid.getDirectionalNeighbours(positions)
+  private val map = RegularGrid.getDirectionalNeighbours(positions)
+
+  def neighbours(direction: Direction, sign: NonZeroSign, p: HasPosition) =
+    map.getOrElse((direction, sign, p), unexpected("no entry for " + (direction, sign, p)))
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -656,9 +659,9 @@ object RegularGridSolver {
   private def getNeighbours(grid: RegularGrid, position: HasPosition,
     direction: Direction): Positions =
     (
-      grid.neighbours.getOrElse((direction, Negative, position), unexpected("no entry for " + (direction, Negative, position) + "\n" + grid.neighbours)),
+      grid.neighbours(direction, Negative, position),
       position,
-      grid.neighbours.getOrElse((direction, Positive, position), unexpected("no entry for " + (direction, Positive, position) + "\n" + grid.neighbours)))
+      grid.neighbours(direction, Positive, position))
 
   def overrideValue(t: HasPosition, overrideValue: Value): HasPosition = {
     if (t.position.equals(overrideValue.position))
@@ -725,12 +728,19 @@ object RegularGridSolver {
     // ...
     // but type erasure means we cannot
 
-    if (is[V, V, V](v)) (v._1, v._2, v._3)
-    else if (is[V, V, E](v)) (v._1, v._2, v._3)
-    else if (v._2.isInstanceOf[Obstacle]) (v._1, v._2, v._3)
-    else if (is[E, V, V](v)) (v._2, v._3, v._1)
-    else if (is[A, V, O](v)) transform((v._1, v._2, obstacleToHasValue(toO(v._3), toV(v._2))))
-    else if (is[O, V, A](v)) transform((obstacleToHasValue(toO(v._1), toV(v._2)), v._2, v._3))
+    if (is[V, V, V](v))
+      (v._1, v._2, v._3)
+    else if (is[V, V, E](v))
+      (v._1, v._2, v._3)
+    else if (v._2.isInstanceOf[Obstacle])
+      (v._1, v._2, v._3)
+    else if (is[E, V, V](v))
+      (v._2, v._3, v._1)
+    else if (is[A, V, O](v))
+      transform((v._1, v._2, obstacleToHasValue(toO(v._3), toV(v._2))))
+    else if (is[O, V, A](v))
+      transform((obstacleToHasValue(toO(v._1), toV(v._2)), v._2, v._3))
+    else unexpected("not handled " + v)
     //    else 
     //    if (is[A,O,V](v))
     //                        (obstacleToHasValue(toO(v._2), toV(v._3)), v._3, new Empty)
@@ -738,7 +748,6 @@ object RegularGridSolver {
     //    if (is[V,O,A](v))
     //                         (v._1, obstacleToHasValue(toO(v._2), toV(v._1)), new Empty)
 
-    else unexpected("not handled " + v)
   }
 
   private def toO(p: HasPosition) = p.asInstanceOf[O]
