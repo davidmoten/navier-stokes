@@ -741,13 +741,6 @@ object RegularGridSolver {
     else if (is[O, V, A](v))
       transform((obstacleToHasValue(toO(v._1), toV(v._2)), v._2, v._3))
     else unexpected("not handled " + v)
-    //    else 
-    //    if (is[A,O,V](v))
-    //                        (obstacleToHasValue(toO(v._2), toV(v._3)), v._3, new Empty)
-    //    else 
-    //    if (is[V,O,A](v))
-    //                         (v._1, obstacleToHasValue(toO(v._2), toV(v._1)), new Empty)
-
   }
 
   private def toO(p: HasPosition) = p.asInstanceOf[O]
@@ -800,33 +793,6 @@ object RegularGridSolver {
         0
       case _ => unexpected
     }
-  }
-
-  private def getSign(x: HasPosition,
-    relativeTo: Option[Vector], direction: Direction): Sign = {
-    relativeTo match {
-      case None => if (!x.isInstanceOf[HasValue])
-        throw new RuntimeException(
-          "relativeTo must be specified if "
-            + "calculating gradient at an obstacle or boundary: " + x)
-      else Sign.Zero
-      case Some(v: Vector) =>
-        if (signum(x.position.get(direction) - v.get(direction)) > 0)
-          Sign.Positive
-        else
-          Sign.Negative
-    }
-  }
-
-  private def getNonZeroSign(x: HasPosition,
-    relativeTo: Vector, direction: Direction): NonZeroSign = {
-    val sign = signum(x.position.get(direction) - relativeTo.get(direction))
-    if (sign == 0)
-      unexpected("x and relativePosition cannot be the same in direction=" + direction + ". x=" + x + ",relativeTo=" + relativeTo)
-    else if (sign > 0)
-      Sign.Positive
-    else
-      Sign.Negative
   }
 
 }
