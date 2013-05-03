@@ -309,10 +309,23 @@ class NavierStokesTest {
     info("creating Data")
     val data = new RegularGridSolver(positions)
     //    println(data)
-    val data2 = data.step(30)
+    val data2 = data.step(1)
     //    println(data2)
-    //should be no change in any value after 30 steps
-    data.getPositions.foreach(p => println(p))
+    //should be no change in any value after 1 steps
+    data.getPositions.foreach(
+        p => println(p))
+    
+    assertEquals(7, data.getPositions.size)
+    assertEquals(6, data.getPositions.filter(p=>p.isInstanceOf[Obstacle]).size)
+    val values = data.getPositions.filter(p=>p.isInstanceOf[HasValue])
+    assertEquals(1, values.size)
+    assertEquals(values.head,
+	          Value(
+	            Vector(1,1,1),
+	            velocity = Vector.zero,
+	            pressure = abs(1 * 1000 * 9.8),
+	            density = 1000,
+	            viscosity = 0.00000105)) 
   }
 
   private def equals(v1: Value, v2: Value, precision: Double): Boolean = {
