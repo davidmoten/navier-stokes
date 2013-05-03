@@ -290,9 +290,9 @@ class NavierStokesTest {
   @Test
   def testNavierStokesStepDoesNothingToDataInEquilibrium() {
     info("equilibrium run")
-    //create a 5x5x5 regular grid with no movement and 0 surface pressure, 
+    //create a 1 cell  regular grid with obstacle boundary 
+    //with no movement and 0 surface pressure, 
     //seawater kinematic viscosity is for 20 degrees C
-    val size = 20
     info("creating positions")
     val positions: Set[HasPosition] =
       addBoundary(
