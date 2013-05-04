@@ -157,24 +157,42 @@ case class Matrix(row1: Vector, row2: Vector, row3: Vector) {
 // Value                                                                        
 /////////////////////////////////////////////////////////////////////
 
+/**
+ * Has a position in 3D space.
+ */
 trait HasPosition {
   def position: Vector
 }
 
+/**
+ * Has a position in 3D space and a value (for example temperature).
+ */
 trait HasValue extends HasPosition {
   def value: Value
 }
 
+/**
+ * A concrete implementation of HasValue.
+ */
 case class Point(value: Value)
   extends HasValue {
   val position = value.position
 }
 
+/**
+ * Is a candidate for being an edge of a set of positions. 
+ */
 trait EdgeCandidate
 
+/**
+ * Is an obstacle to water movement.
+ */
 case class Obstacle(position: Vector)
   extends HasPosition with EdgeCandidate
 
+/**
+ * Is either water or obstacle with unknown value. 
+ */
 case class Empty(position: Vector) extends HasPosition
   with EdgeCandidate {
   def this() {
@@ -540,16 +558,13 @@ trait Solver {
 // Sign                      
 /////////////////////////////////////////////////////////////////////
 
-trait Sign
 trait NonZeroSign
-case class PositiveSign() extends Sign with NonZeroSign
-case class NegativeSign() extends Sign with NonZeroSign
-case class ZeroSign() extends Sign
+case class PositiveSign() extends NonZeroSign
+case class NegativeSign() extends NonZeroSign
 
 object Sign {
   val Positive = PositiveSign()
   val Negative = NegativeSign()
-  val Zero = ZeroSign();
   val nonZeroSigns = List(Positive, Negative)
 }
 
