@@ -405,7 +405,7 @@ trait Solver {
   private def getPressureCorrection(position: HasValue, overrideValue: HasValue): Double = {
     val pressureLaplacian = getPressureLaplacian(position, overrideValue)
     return pressureLaplacian +
-      directions.map(d => getGradient(position, d,
+      directions.map(d => overrideValue.velocity.get(d) * getGradient(position, d,
         gradientDot(d),
         FirstDerivative, Some(overrideValue))).sum
   }
