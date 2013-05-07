@@ -1,0 +1,23 @@
+<html>
+<h2>Algorithm</h2>
+
+<p>A stepwise method (over time) is used to calculate the velocity
+	vector and pressure values at each cell in the region being modelled.</p>
+
+<p>Given the velocity and pressure values at time t for position p
+	we calculate the values for the next time step at time t + delta as
+	follows:</p>
+
+<ol>
+	<li><p>Calculate velocity at time t+delta using the
+			Navier-Stokes equations:</p>
+		<p><div style="font-style:italic">velocityLaplacian = sum of 2nd derivatives of velocity wrt coordinates x,y,z</div></p>
+		<p><div style="font-style:italic">velocityJacobian = 3x3 matrix of partial derivatives of velocity wrt x,y,z</div></p>
+		<p><div style="font-style:italic">divergenceOfStress = velocityLaplacian * viscosity -
+			pressureGradient</div></p>
+		<p><div style="font-style:italic">dv/dt = divergenceOfStress/density + gravity - velocityJacobian*v</div>
+		<p>velocity at time t + delta is <div style="font-style:italic">v'= v + delta*dv/dt</div></p></li>
+	<li>Calculate pressure at time t+delta by applying Newton's method
+		to solve the Pressure Correction equation</li>
+</ol>
+</html>
