@@ -1,7 +1,7 @@
 navier-stokes
 =============
 
-Scala code to model water movement.
+Scala code to model water movement using the Navier-Stokes incompressible fluid equations.
 
 *Status*: pre-alpha
 
